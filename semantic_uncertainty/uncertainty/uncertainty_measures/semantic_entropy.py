@@ -8,11 +8,11 @@ import wandb
 import torch
 import torch.nn.functional as F
 
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, DebertaV2Tokenizer
 
 from uncertainty.models.huggingface_models import HuggingfaceModel
 from uncertainty.utils import openai as oai
-from uncertainty.utils import utils
+from uncertainty.utils import utils 
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -25,9 +25,18 @@ class BaseEntailment:
 
 class EntailmentDeberta(BaseEntailment):
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v2-xlarge-mnli")
+        # self.tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v2-xlarge-mnli")
+        
+        # self.tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v2-xlarge-mnli", use_fast=False)
+        
+        # self.tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge-mnli")
+        self.tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge-mnli",
+        revision="safetensors")
+        
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            "microsoft/deberta-v2-xlarge-mnli").to(DEVICE)
+        "microsoft/deberta-v2-xlarge-mnli",
+        trust_remote_code=True,
+        revision="safetensors").to(DEVICE)
 
     def check_implication(self, text1, text2, *args, **kwargs):
         inputs = self.tokenizer(text1, text2, return_tensors="pt").to(DEVICE)

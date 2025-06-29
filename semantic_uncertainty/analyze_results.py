@@ -23,7 +23,8 @@ UNC_MEAS = 'uncertainty_measures.pkl'
 
 def init_wandb(wandb_runid, assign_new_wandb_id, experiment_lot, entity):
     """Initialize wandb session."""
-    user = os.environ['USER']
+    # user = os.environ['USER']
+    user = os.environ.get('USER') or os.environ.get('USERNAME') or 'unknown'
     slurm_jobid = os.getenv('SLURM_JOB_ID')
     scratch_dir = os.getenv('SCRATCH_DIR', '.')
     kwargs = dict(

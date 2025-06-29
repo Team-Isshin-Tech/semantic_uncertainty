@@ -32,7 +32,8 @@ def main(args):
 
     experiment_details = {'args': args}
     random.seed(args.random_seed)
-    user = os.environ['USER']
+    # user = os.environ['USER']
+    user = os.environ.get('USER') or os.environ.get('USERNAME') or 'unknown'
     slurm_jobid = os.getenv('SLURM_JOB_ID', None)
     scratch_dir = os.getenv('SCRATCH_DIR', '.')
     if not os.path.exists(f"{scratch_dir}/{user}/uncertainty"):

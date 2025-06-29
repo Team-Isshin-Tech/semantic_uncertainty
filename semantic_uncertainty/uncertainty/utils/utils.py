@@ -339,4 +339,4 @@ def get_metric(metric):
 def save(object, file):
     with open(f'{wandb.run.dir}/{file}', 'wb') as f:
         pickle.dump(object, f)
-    wandb.save(f'{wandb.run.dir}/{file}')
+    # wandb.save(f'{wandb.run.dir}/{file}')

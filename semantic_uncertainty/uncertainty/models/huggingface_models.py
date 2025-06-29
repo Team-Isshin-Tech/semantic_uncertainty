@@ -120,7 +120,7 @@ class HuggingfaceModel(BaseModel):
             if ('7b' in model_name or '13b' in model_name) or eightbit:
                 self.model = AutoModelForCausalLM.from_pretrained(
                     f"{base}/{model_name}", device_map="auto",
-                    max_memory={0: '80GIB'}, **kwargs,)
+                    max_memory={0: '80GIB'}, **kwargs,use_safetensors=True,)
 
             elif llama2_70b or llama65b:
                 path = snapshot_download(
@@ -172,10 +172,11 @@ class HuggingfaceModel(BaseModel):
                 device_map='auto',
                 max_memory={0: '80GIB'},
                 **kwargs,
+                use_safetensors=True,
             )
 
         elif 'falcon' in model_name:
-            model_id = f'tiiuae/{model_name}'
+            model_id = f'{model_name}'
             self.tokenizer = AutoTokenizer.from_pretrained(
                 model_id, device_map='auto', token_type_ids=None,
                 clean_up_tokenization_spaces=False)
@@ -188,6 +189,7 @@ class HuggingfaceModel(BaseModel):
                 trust_remote_code=True,
                 device_map='auto',
                 **kwargs,
+                use_safetensors=True,
             )
         else:
             raise ValueError
