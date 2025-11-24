@@ -4,11 +4,56 @@ import logging
 import argparse
 import pickle
 
-import wandb
+try:
+    import wandb
+except Exception:
+    # Create a lightweight wandb stub so the repository can run without the
+    # `wandb` package being installed. This provides minimal attributes used
+    # by the code (run.dir, save, init, Api) and will raise if remote API
+    # functionality is actually attempted.
+    import sys
+    import types
 
-from evaluate import load
+    wandb = types.ModuleType("wandb")
 
-from uncertainty.models.huggingface_models import HuggingfaceModel
+    class _Run:
+        def __init__(self):
+            # Default to the current working directory when no wandb run is active.
+            self.dir = os.getcwd()
+
+    def _save(*args, **kwargs):
+        # No-op save when wandb is not installed.
+        return None
+
+    def _init(*args, **kwargs):
+        # No-op init when wandb is not installed.
+        return None
+
+    class _Api:
+        def run(self, *args, **kwargs):
+            raise RuntimeError('wandb.Api.run() is unavailable because wandb is not installed.')
+
+    wandb.run = _Run()
+    wandb.save = _save
+    wandb.init = _init
+    wandb.Api = _Api
+
+    # Ensure other imports of `wandb` in the process get the same stub module.
+    sys.modules['wandb'] = wandb
+
+try:
+    from evaluate import load
+except Exception:
+    # Provide a lightweight stub for `evaluate.load` so importing this
+    # module doesn't fail in environments where `evaluate` isn't installed.
+    def load(name):
+        def _stub(*args, **kwargs):
+            raise RuntimeError(f"The 'evaluate' package is required to use metric '{name}'. Please install it (pip install evaluate).")
+        return _stub
+
+# Importing HuggingfaceModel is deferred until init_model() to avoid
+# importing heavy dependencies (e.g. accelerate, transformers) at module
+# import time for scripts that don't require the model (like noise_runs).
 from uncertainty.utils import openai as oai
 
 BRIEF_PROMPTS = {
@@ -221,7 +266,7 @@ def model_based_metric(predicted_answer, example, model):
     if 'gpt' in model.model_name.lower():
         predicted_answer = model.predict(prompt, 0.01)
     else:
-        predicted_answer, _, _ = model.predict(prompt, 0.01)
+        predicted_answer, _, _, _, _ = model.predict(prompt, 0.01)
 
     if 'yes' in predicted_answer.lower():
         return 1.0
@@ -229,7 +274,7 @@ def model_based_metric(predicted_answer, example, model):
         return 0.0
     else:
         logging.warning('Redo llm check.')
-        predicted_answer, _, _ = model.predict(prompt, 1)
+        predicted_answer, _, _, _, _ = model.predict(prompt, 1)
         if 'yes' in predicted_answer.lower():
             return 1.0
         elif 'no' in predicted_answer.lower():
@@ -275,6 +320,7 @@ def get_reference(example):
 def init_model(args):
     mn = args.model_name
     if 'llama' in mn.lower() or 'falcon' in mn or 'mistral' in mn.lower():
+        from uncertainty.models.huggingface_models import HuggingfaceModel
         model = HuggingfaceModel(
             mn, stop_sequences='default',
             max_new_tokens=args.model_max_new_tokens)

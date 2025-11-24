@@ -144,12 +144,37 @@ def analyze_run(
                 fargs[f'accuracy_at_{answer_fraction}_answer_fraction'] = [validation_accuracy, measure_values]
 
             for fname, (function, bs_function) in eval_metrics.items():
-                metric_i = function(*fargs[fname])
-                result_dict['uncertainty'][name][fname] = {}
-                result_dict['uncertainty'][name][fname]['mean'] = metric_i
-                logging.info("%s for measure name `%s`: %f", fname, name, metric_i)
-                result_dict['uncertainty'][name][fname]['bootstrap'] = bs_function(
-                    function, rng)(*fargs[fname])
+                        # Debug info: sample size and label-uniques (if applicable).
+                        try:
+                            first_arg = fargs[fname][0]
+                            arr = np.asarray(first_arg)
+                            n_samples = arr.shape[0]
+                            try:
+                                n_unique = np.unique(arr).size
+                            except Exception:
+                                n_unique = None
+                        except Exception:
+                            n_samples = None
+                            n_unique = None
+                        logging.debug('Metric `%s` on measure `%s`: n_samples=%s, n_unique=%s', fname, name, n_samples, n_unique)
+
+                        metric_i = function(*fargs[fname])
+                        result_dict['uncertainty'][name][fname] = {}
+                        result_dict['uncertainty'][name][fname]['mean'] = metric_i
+                        if metric_i is None or (isinstance(metric_i, float) and np.isnan(metric_i)):
+                            logging.warning('%s for measure name `%s` is NaN or undefined.', fname, name)
+                        else:
+                            logging.info('%s for measure name `%s`: %f', fname, name, metric_i)
+
+                        # Compute bootstrap if possible. The bs_function wrappers are
+                        # defensive, but avoid calling them when inputs are clearly
+                        # degenerate (for example AUROC with a single class).
+                        try:
+                            bs_res = bs_function(function, rng)(*fargs[fname])
+                        except Exception:
+                            logging.warning('Bootstrap failed for %s on %s; returning NaN-filled bootstrap.', fname, name)
+                            bs_res = {'std_err': float('nan'), 'low': float('nan'), 'high': float('nan')}
+                        result_dict['uncertainty'][name][fname]['bootstrap'] = bs_res
 
     wandb.log(result_dict)
     logging.info(

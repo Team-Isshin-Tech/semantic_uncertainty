@@ -135,3 +135,8 @@ dmypy.json
 
 # VSCODE
 .vscode
+
+# Local experiment artifacts (Praveen)
+semantic_uncertainty/Praveen/uncertainty/wandb/
+semantic_uncertainty/**/wandb/
+wandb/

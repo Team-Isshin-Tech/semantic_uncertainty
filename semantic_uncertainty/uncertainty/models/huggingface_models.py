@@ -228,7 +228,75 @@ class HuggingfaceModel(BaseModel):
                 do_sample=True,
                 stopping_criteria=stopping_criteria,
                 pad_token_id=pad_token_id,
+                # For some models (e.g. Falcon-RW) caching can cause issues with
+                # capturing per-step logits reliably. Disable use_cache when
+                # running sampling to be safe.
+                use_cache=False if 'falcon' in self.model_name.lower() else True,
             )
+
+        # ----- BEGIN NEW CAPTURE BLOCK -----
+        # Capture per-step logits (pre-softmax) and chosen token ids per sample.
+        # Works for batch sizes >= 1 and handles early EOS/PAD correctly.
+        def _first_index(x, values):
+            """Return the first index in list/1D tensor x that equals any of `values`, else None."""
+            if not isinstance(values, (list, tuple, set)):
+                values = [values]
+            vals = set(int(v) for v in values if v is not None)
+            for i, v in enumerate(x):
+                if int(v) in vals:
+                    return i
+            return None
+
+        # Basic tensors from generation
+        sequences = outputs.sequences  # shape: [batch_size, input_len + max_new_tokens]
+        scores = outputs.scores  # tuple length T_max; each is [batch_size, vocab_size]
+
+        # Prompt length; batch size
+        batch_size = sequences.shape[0]
+        input_len = inputs['input_ids'].shape[1]
+
+        # Token IDs that were generated (strip the prompt part)
+        gen_token_ids_full = sequences[:, input_len:]
+
+        eos_ids = self.model.config.eos_token_id
+        pad_id = self.tokenizer.pad_token_id
+        if pad_id is None:
+            pad_id = self.tokenizer.eos_token_id
+
+        batch_step_logits = []
+        batch_gen_token_ids = []
+
+        T_max = len(scores)
+
+        # Move per-step logits to CPU/float32 once
+        logits_by_step = [s.detach().to(dtype=torch.float32, device='cpu') for s in scores]
+
+        for i in range(batch_size):
+            gen_ids_row = gen_token_ids_full[i].detach().cpu().tolist()
+
+            eos_pos = _first_index(gen_ids_row, eos_ids)
+            pad_pos = _first_index(gen_ids_row, pad_id)
+
+            if eos_pos is not None:
+                T_i = eos_pos + 1
+            elif pad_pos is not None:
+                T_i = pad_pos
+            else:
+                T_i = T_max
+
+            T_i = max(0, min(T_i, T_max))
+
+            chosen_ids = gen_ids_row[:T_i]
+
+            step_logits_i = []
+            for t in range(T_i):
+                logits_t_i = logits_by_step[t][i]
+                step_logits_i.append(logits_t_i)
+
+            batch_gen_token_ids.append(chosen_ids)
+            batch_step_logits.append(step_logits_i)
+
+        # ----- END NEW CAPTURE BLOCK -----
 
         if len(outputs.sequences[0]) > self.token_limit:
             raise ValueError(
@@ -354,7 +422,8 @@ class HuggingfaceModel(BaseModel):
         if len(log_likelihoods) == 0:
             raise ValueError
 
-        return sliced_answer, log_likelihoods, last_token_embedding
+        # Return the existing outputs plus the per-step logits and token ids
+        return sliced_answer, log_likelihoods, last_token_embedding, batch_step_logits, batch_gen_token_ids
 
     def get_p_true(self, input_data):
         """Get the probability of the model anwering A (True) for the given input."""

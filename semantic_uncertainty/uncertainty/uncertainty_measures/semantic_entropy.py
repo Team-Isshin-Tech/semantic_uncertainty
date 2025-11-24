@@ -4,7 +4,30 @@ import pickle
 import logging
 
 import numpy as np
-import wandb
+try:
+    import wandb
+except Exception:
+    # Provide a minimal stub for wandb when it's not installed. This allows
+    # analysis scripts that do not require remote logging to run locally.
+    import sys
+    import types
+    wandb = types.ModuleType('wandb')
+
+    class _Run:
+        def __init__(self):
+            self.dir = os.getcwd()
+
+    def _noop(*args, **kwargs):
+        return None
+
+    class _Api:
+        def run(self, *args, **kwargs):
+            raise RuntimeError('wandb.Api.run() is unavailable because wandb is not installed.')
+
+    wandb.run = _Run()
+    wandb.init = _noop
+    wandb.Api = _Api
+    sys.modules['wandb'] = wandb
 import torch
 import torch.nn.functional as F
 
@@ -155,7 +178,7 @@ class EntailmentLlama(EntailmentLLM):
         return prompt
 
     def predict(self, prompt, temperature):
-        predicted_answer, _, _ = self.model.predict(prompt, temperature)
+        predicted_answer, _, _, _, _ = self.model.predict(prompt, temperature)
         return predicted_answer
 
 

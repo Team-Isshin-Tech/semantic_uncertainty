@@ -177,7 +177,7 @@ def main(args):
                 # Temperature for first generation is always `0.1`.
                 temperature = 0.1 if i == 0 else args.temperature
 
-                predicted_answer, token_log_likelihoods, embedding = model.predict(
+                predicted_answer, token_log_likelihoods, embedding, batch_step_logits, batch_gen_token_ids = model.predict(
                     local_prompt, temperature)
                 embedding = embedding.cpu() if embedding is not None else None
 
@@ -202,6 +202,8 @@ def main(args):
                         'response': predicted_answer,
                         'token_log_likelihoods': token_log_likelihoods,
                         'embedding': embedding,
+                        'step_logits': batch_step_logits[0] if batch_step_logits else [],
+                        'gen_ids': batch_gen_token_ids[0] if batch_gen_token_ids else [],
                         'accuracy': acc}
                     generations[example['id']].update({
                         'most_likely_answer': most_likely_answer_dict,
@@ -211,7 +213,9 @@ def main(args):
                     logging.info('high-t prediction '.ljust(15) + str(i) + ' : ' + predicted_answer)
                     # Aggregate predictions over num_generations.
                     full_responses.append(
-                        (predicted_answer, token_log_likelihoods, embedding, acc))
+                        (predicted_answer, token_log_likelihoods, embedding, acc,
+                         batch_step_logits[0] if batch_step_logits else [],
+                         batch_gen_token_ids[0] if batch_gen_token_ids else []))
 
             # Append all predictions for this example to `generations`.
             generations[example['id']]['responses'] = full_responses

@@ -2,6 +2,7 @@
 import logging
 import torch
 import wandb
+import numpy as np
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
@@ -18,6 +19,20 @@ def get_p_ik(train_embeddings, is_false, eval_embeddings=None, eval_is_false=Non
     train_embeddings_tensor = torch.cat(train_embeddings, dim=0)  # pylint: disable=no-member
     # Convert the tensor to a numpy array.
     embeddings_array = train_embeddings_tensor.cpu().numpy()
+
+    # If we do not have enough samples to split/train, return neutral
+    # probabilities for the evaluation set (safe fallback). This can
+    # happen during quick dev runs with num_samples=1 on shared servers.
+    n_samples = embeddings_array.shape[0]
+    if n_samples < 2:
+        logging.warning(
+            'Not enough samples for p_ik training (n=%d). Returning neutral probabilities for eval set.',
+            n_samples)
+        # If eval_embeddings provided, return 0.5 for each eval example; else empty array
+        if eval_embeddings is None or len(eval_embeddings) == 0:
+            return np.array([])
+        X_eval = torch.cat(eval_embeddings, dim=0).cpu().numpy()  # pylint: disable=no-member,invalid-name
+        return np.full(X_eval.shape[0], 0.5, dtype=float)
 
     # Split the data into training and test sets.
     X_train, X_test, y_train, y_test = train_test_split(  # pylint: disable=invalid-name
