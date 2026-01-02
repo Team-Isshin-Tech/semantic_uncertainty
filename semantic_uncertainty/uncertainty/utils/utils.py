@@ -38,6 +38,10 @@ def get_parser(stages=['generate', 'compute']):
         help="Keep default wandb clean.")
     if 'generate' in stages:
         parser.add_argument(
+            "--output_dir", type=str, default="results",
+            help="Output directory for run results and logs."
+        )
+        parser.add_argument(
             "--model_name", type=str, default="Llama-2-7b-chat", help="Model name",
         )
         parser.add_argument(

@@ -3,6 +3,10 @@ import gc
 import os
 import logging
 import random
+import json
+import socket
+import subprocess
+from datetime import datetime
 from tqdm import tqdm
 
 import numpy as np
@@ -15,10 +19,96 @@ from uncertainty.uncertainty_measures import p_true as p_true_utils
 from compute_uncertainty_measures import main as main_compute
 
 
+def get_git_commit_hash():
+    """Get current git commit hash. Returns 'unknown' if git not available."""
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+        pass
+    return 'unknown'
+
+
+def setup_run_output_directory(args):
+    """Create run output directory structure and configure logging.
+    
+    Returns:
+        run_dir: Path to the run-specific output directory
+    """
+    args.output_dir = os.path.abspath(args.output_dir)
+
+
+    # Create run_id from timestamp + model_name + dataset + num_samples + num_generations
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    model_short = args.model_name.replace('/', '_').replace('-', '_')[:30]
+    run_id = f"{timestamp}_{model_short}_{args.dataset}_{args.num_samples}_{args.num_generations}"
+    
+    # Create directory structure
+    run_dir = os.path.join(args.output_dir, run_id)
+    logs_dir = os.path.join(run_dir, 'logs')
+    artifacts_dir = os.path.join(run_dir, 'artifacts')
+    
+    os.makedirs(logs_dir, exist_ok=True)
+    os.makedirs(artifacts_dir, exist_ok=True)
+    
+    # Setup logging to file and console
+    log_file = os.path.join(logs_dir, 'run.log')
+    logger = logging.getLogger()
+    
+    # Add file handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s',
+                                 datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+
+    # Avoid adding multiple handlers if already present
+    log_file_abs = os.path.abspath(log_file)
+
+    if not any(
+        isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "") == log_file_abs
+        for h in logger.handlers
+    ):
+        logger.addHandler(file_handler)
+    
+    # Save run metadata
+    metadata = {
+        'run_id': run_id,
+        'hostname': socket.gethostname(),
+        'username': os.environ.get('USER', 'unknown'),
+        'start_time': datetime.now().isoformat(),
+        'git_commit': get_git_commit_hash(),
+        'args': vars(args),
+    }
+    
+    metadata_file = os.path.join(run_dir, 'run_info.json')
+    with open(metadata_file, 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
+    logging.info('='*80)
+    logging.info(f'Run output directory: {run_dir}')
+    logging.info(f'Run ID: {run_id}')
+    logging.info(f'Logs: {logs_dir}')
+    logging.info(f'Artifacts: {artifacts_dir}')
+    logging.info(f'Metadata: {metadata_file}')
+    logging.info('='*80)
+    
+    return run_dir
+
+
 utils.setup_logger()
 
 
 def main(args):
+    # ====== NEW CODE: Setup output directory and logging ======
+    run_dir = setup_run_output_directory(args)
+    # ====== END NEW CODE ======
 
     # Setup run.
     if args.dataset == 'svamp':

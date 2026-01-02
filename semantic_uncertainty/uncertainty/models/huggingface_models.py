@@ -101,8 +101,20 @@ class HuggingfaceModel(BaseModel):
                 model_name = model_name[:-len('-8bit')]
                 eightbit = True
             else:
-                kwargs = {}
+                # ====== ORIGINAL CODE (commented out) ======
+                # kwargs = {}
+                # eightbit = False
+                # ====== END ORIGINAL CODE ======
+                
+                # ====== NEW CODE: 4-bit quantization for memory efficiency ======
+                kwargs = {'quantization_config': BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                )}
                 eightbit = False
+                # ====== END NEW CODE ======
 
             if 'Llama-2' in model_name:
                 base = 'meta-llama'
@@ -118,9 +130,19 @@ class HuggingfaceModel(BaseModel):
             llama2_70b = '70b' in model_name and base == 'meta-llama'
 
             if ('7b' in model_name or '13b' in model_name) or eightbit:
+                # ====== ORIGINAL CODE (commented out) ======
+                # self.model = AutoModelForCausalLM.from_pretrained(
+                #     f"{base}/{model_name}", device_map="auto",
+                #     max_memory={0: '80GIB'}, **kwargs,)
+                # ====== END ORIGINAL CODE ======
+                
+                # ====== NEW CODE: Added torch_dtype and low_cpu_mem_usage for 4-bit ======
                 self.model = AutoModelForCausalLM.from_pretrained(
                     f"{base}/{model_name}", device_map="auto",
+                    torch_dtype=torch.float16,
+                    low_cpu_mem_usage=True,
                     max_memory={0: '80GIB'}, **kwargs,)
+                # ====== END NEW CODE ======
 
             elif llama2_70b or llama65b:
                 path = snapshot_download(
@@ -155,24 +177,60 @@ class HuggingfaceModel(BaseModel):
                 kwargs = {'quantization_config': BitsAndBytesConfig(
                     load_in_8bit=True,)}
                 model_name = model_name[:-len('-8bit')]
-            if model_name.endswith('-4bit'):
+            elif model_name.endswith('-4bit'):
+                # ====== ORIGINAL CODE (commented out) ======
+                # kwargs = {'quantization_config': BitsAndBytesConfig(
+                #     load_in_4bit=True,)}
+                # model_name = model_name[:-len('-4bit')]
+                # ====== END ORIGINAL CODE ======
+                
+                # ====== NEW CODE: Enhanced 4-bit configuration ======
                 kwargs = {'quantization_config': BitsAndBytesConfig(
-                    load_in_4bit=True,)}
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                )}
                 model_name = model_name[:-len('-4bit')]
+                # ====== END NEW CODE ======
             else:
-                kwargs = {}
+                # ====== ORIGINAL CODE (commented out) ======
+                # kwargs = {}
+                # ====== END ORIGINAL CODE ======
+                
+                # ====== NEW CODE: Use 4-bit quantization by default for memory efficiency ======
+                kwargs = {'quantization_config': BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                )}
+                # ====== END NEW CODE ======
 
             model_id = f'mistralai/{model_name}'
             self.tokenizer = AutoTokenizer.from_pretrained(
                 model_id, device_map='auto', token_type_ids=None,
                 clean_up_tokenization_spaces=False)
 
+            # ====== ORIGINAL CODE (commented out) ======
+            # self.model = AutoModelForCausalLM.from_pretrained(
+            #     model_id,
+            #     device_map='auto',
+            #     max_memory={0: '80GIB'},
+            #     **kwargs,
+            # )
+            # ====== END ORIGINAL CODE ======
+            
+            # ====== NEW CODE: Added torch_dtype and low_cpu_mem_usage for 4-bit ======
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_id,
                 device_map='auto',
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True,
                 max_memory={0: '80GIB'},
                 **kwargs,
             )
+            # ====== END NEW CODE ======
 
         elif 'falcon' in model_name:
             model_id = f'tiiuae/{model_name}'
@@ -180,15 +238,38 @@ class HuggingfaceModel(BaseModel):
                 model_id, device_map='auto', token_type_ids=None,
                 clean_up_tokenization_spaces=False)
 
+            # ====== ORIGINAL CODE (commented out) ======
+            # kwargs = {'quantization_config': BitsAndBytesConfig(
+            #     load_in_8bit=True,)}
+            # ====== END ORIGINAL CODE ======
+            
+            # ====== NEW CODE: Use 4-bit quantization for memory efficiency ======
             kwargs = {'quantization_config': BitsAndBytesConfig(
-                load_in_8bit=True,)}
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_compute_dtype=torch.float16,
+            )}
+            # ====== END NEW CODE ======
 
+            # ====== ORIGINAL CODE (commented out) ======
+            # self.model = AutoModelForCausalLM.from_pretrained(
+            #     model_id,
+            #     device_map='auto',
+            #     **kwargs,
+            # )
+            # ====== END ORIGINAL CODE ======
+            
+            # ====== NEW CODE: Added torch_dtype and low_cpu_mem_usage for 4-bit ======
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_id,
                 # trust_remote_code=True,
                 device_map='auto',
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True,
                 **kwargs,
             )
+            # ====== END NEW CODE ======
         else:
             raise ValueError
 
