@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 import numpy as np
 import torch
+import shutil
 import wandb
 
 from uncertainty.data.data_utils import load_ds
@@ -99,7 +100,9 @@ def setup_run_output_directory(args):
     logging.info(f'Metadata: {metadata_file}')
     logging.info('='*80)
     
-    return run_dir
+    # return run_dir
+    return run_dir, artifacts_dir
+
 
 
 utils.setup_logger()
@@ -107,8 +110,11 @@ utils.setup_logger()
 
 def main(args):
     # ====== NEW CODE: Setup output directory and logging ======
-    run_dir = setup_run_output_directory(args)
+    # run_dir = setup_run_output_directory(args)
+    run_dir, artifacts_dir = setup_run_output_directory(args)
+
     # ====== END NEW CODE ======
+
 
     # Setup run.
     if args.dataset == 'svamp':
@@ -139,6 +145,20 @@ def main(args):
 
     # Get accuracy metric.
     metric = utils.get_metric(args.metric)
+
+    def save_and_copy(obj, filename):
+        # save using repo's utils (goes to wandb.run.dir)
+        utils.save(obj, filename)
+
+        # copy into results/<run_id>/artifacts
+        src = os.path.join(wandb.run.dir, filename)
+        dst = os.path.join(artifacts_dir, filename)
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            logging.info("Copied artifact to %s", dst)
+        else:
+            logging.warning("Expected artifact not found at %s", src)
+
 
     # Load dataset.
     train_dataset, validation_dataset = load_ds(
@@ -213,6 +233,7 @@ def main(args):
 
         # This will store all input data and model predictions.
         accuracies, generations, results_dict, p_trues = [], {}, {}, []
+        records = []  # Track SE_before per question
 
         if dataset_split == 'train':
             if not args.get_training_set_generations:
@@ -220,7 +241,6 @@ def main(args):
                 continue
             dataset = train_dataset
             possible_indices = list(set(remaining_answerable) | set(unanswerable_indices))
-
         else:
             dataset = validation_dataset
             possible_indices = range(0, len(dataset))
@@ -306,6 +326,29 @@ def main(args):
             # Append all predictions for this example to `generations`.
             generations[example['id']]['responses'] = full_responses
 
+            # ====== NEW CODE: Compute SE_before (token-level predictive entropy) ======
+            if dataset_split == 'validation':
+                from uncertainty.uncertainty_measures.semantic_entropy import predictive_entropy
+                
+                se_before = None
+                if full_responses:
+                    # Get log likelihoods from all high-T generations
+                    all_token_lls = []
+                    for response_tuple in full_responses:
+                        _, token_ll, _, _ = response_tuple
+                        if token_ll:
+                            all_token_lls.extend(token_ll)
+                    if all_token_lls:
+                        se_before = predictive_entropy(np.array(all_token_lls))
+                
+                record = {
+                    'question_id': example['id'],
+                    'se_before': se_before,
+                    'correctness': most_likely_answer_dict['accuracy'],
+                }
+                records.append(record)
+            # ====== END NEW CODE ======
+
             if args.compute_p_true and dataset_split == 'validation':
                 # Already compute p_true here. Avoid cost of generations in compute_uncertainty script.
                 p_true = p_true_utils.calculate_p_true(
@@ -330,6 +373,13 @@ def main(args):
                     'p_false_fixed':  [1 - np.exp(p) for p in p_trues],
                 }
             utils.save(results_dict, 'uncertainty_measures.pkl')
+
+    # Save SE_before records
+    se_before_file = os.path.join(run_dir, 'se_before.jsonl')
+    with open(se_before_file, 'w') as f:
+        for record in records:
+            f.write(json.dumps(record) + '\n')
+    logging.info(f'Saved {len(records)} SE_before records to {se_before_file}')
 
     utils.save(experiment_details, 'experiment_details.pkl')
     logging.info('Run complete.')
