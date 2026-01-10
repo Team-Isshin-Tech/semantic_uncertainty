@@ -1,5 +1,6 @@
 """Compute uncertainty measures after generating answers."""
 from collections import defaultdict
+import json
 import logging
 import os
 import pickle
@@ -25,6 +26,11 @@ from uncertainty.utils import utils
 
 
 utils.setup_logger()
+
+# Noise configuration for robustness analysis
+NOISE_MEANS = [0.0, 0.5, 1.0, 2.0]
+NOISE_STDS = [0.5, 1.0, 2.0]
+N_NOISE_SAMPLES = 100
 
 EXP_DETAILS = 'experiment_details.pkl'
 
@@ -249,6 +255,50 @@ def main(args):
             log_likelihood_per_semantic_id = logsumexp_by_id(semantic_ids, log_liks_agg, agg='sum_normalized')
             pe = predictive_entropy_rao(log_likelihood_per_semantic_id)
             entropies['semantic_entropy'].append(pe)
+
+            # ====== NOISE ROBUSTNESS ANALYSIS ======
+            # Compute SE_after under Gaussian noise perturbations
+            se_before = pe
+            correctness = most_likely_answer['accuracy']
+            
+            for mu in NOISE_MEANS:
+                for sigma in NOISE_STDS:
+                    se_after_samples = []
+                    
+                    for _ in range(N_NOISE_SAMPLES):
+                        # Add Gaussian noise to log-likelihoods
+                        noise = np.random.normal(mu, sigma, len(log_liks_agg))
+                        noisy_log_liks_agg = [ll + n for ll, n in zip(log_liks_agg, noise)]
+                        
+                        # Recompute semantic entropy with noisy log-likelihoods
+                        noisy_log_likelihood_per_semantic_id = logsumexp_by_id(
+                            semantic_ids, noisy_log_liks_agg, agg='sum_normalized')
+                        noisy_se = predictive_entropy_rao(noisy_log_likelihood_per_semantic_id)
+                        se_after_samples.append(noisy_se)
+                    
+                    # Compute statistics
+                    se_mean = np.mean(se_after_samples)
+                    se_std = np.std(se_after_samples)
+                    delta_se = se_mean - se_before
+                    
+                    # Store noise results
+                    noise_record = {
+                        'question_id': tid,
+                        'mu': mu,
+                        'sigma': sigma,
+                        'se_before': float(se_before),
+                        'se_after_samples': [float(s) for s in se_after_samples],
+                        'se_mean': float(se_mean),
+                        'se_std': float(se_std),
+                        'delta_se': float(delta_se),
+                        'correctness': float(correctness)
+                    }
+                    
+                    # Save to JSONL file
+                    noise_file = os.path.join(wandb.run.dir, 'se_after_noise.jsonl')
+                    with open(noise_file, 'a') as f:
+                        f.write(json.dumps(noise_record) + '\n')
+            # ====== END NOISE ROBUSTNESS ANALYSIS ======
 
             # pylint: disable=invalid-name
             log_str = 'semantic_ids: %s, avg_token_log_likelihoods: %s, entropies: %s'
