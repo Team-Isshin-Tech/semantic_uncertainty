@@ -6,6 +6,7 @@ import os
 import pickle
 import numpy as np
 import wandb
+import glob
 
 from analyze_results import analyze_run
 from uncertainty.data.data_utils import load_ds
@@ -95,9 +96,31 @@ def main(args):
     else:
         is_ood_eval = False  # pylint: disable=invalid-name
         if args.compute_p_ik or args.compute_p_ik_answerable:
-            train_generations_pickle = restore('train_generations.pkl')
-            with open(train_generations_pickle.name, 'rb') as infile:
-                train_generations = pickle.load(infile)
+            # Try restoring from WandB, fallback to local cache
+            try:
+                train_generations_pickle = restore('train_generations.pkl')
+                with open(train_generations_pickle.name, 'rb') as infile:
+                    train_generations = pickle.load(infile)
+                logging.info('Restored train_generations.pkl from previous run.')
+            except Exception as e:
+                logging.warning('Could not restore train_generations.pkl (%s). Trying local cache lookup.', e)
+                patterns = [
+                    os.path.join(wandb_dir, f'run-*{args.train_wandb_runid or args.eval_wandb_runid}', 'train_generations.pkl'),
+                    os.path.join(wandb_dir, f'run-*{args.train_wandb_runid or args.eval_wandb_runid}', 'files', 'train_generations.pkl'),
+                ]
+                candidates = []
+                for pat in patterns:
+                    candidates.extend(glob.glob(pat))
+                if not candidates:
+                    cwd = os.getcwd()
+                    candidates = glob.glob(os.path.join(cwd, '**', 'train_generations.pkl'), recursive=True)
+                if candidates:
+                    local_train_path = sorted(candidates, key=lambda p: os.path.getmtime(p))[-1]
+                    with open(local_train_path, 'rb') as infile:
+                        train_generations = pickle.load(infile)
+                    logging.info('Loaded train_generations.pkl from local cache: %s', local_train_path)
+                else:
+                    raise RuntimeError('train_generations.pkl not found in WandB or local cache. Ensure generate_answers.py produced training generations for p_ik.')
 
     wandb.config.update({"is_ood_eval": is_ood_eval}, allow_val_change=True)
 
@@ -167,15 +190,45 @@ def main(args):
         logging.warning('Recompute accuracy enabled. This does not apply to precomputed p_true!')
         metric = utils.get_metric(args.metric)
 
-    # Restore outputs from `generate_answrs.py` run.
-    result_dict_pickle = restore('uncertainty_measures.pkl')
-    with open(result_dict_pickle.name, "rb") as infile:
-        result_dict = pickle.load(infile)
+    # Restore outputs from `generate_answers.py` run.
+    # Fallback: initialize fresh result_dict if file is not present in the old run.
+    try:
+        result_dict_pickle = restore('uncertainty_measures.pkl')
+        with open(result_dict_pickle.name, "rb") as infile:
+            result_dict = pickle.load(infile)
+        logging.info('Restored uncertainty_measures.pkl from previous run.')
+    except Exception as e:  # wandb.errors.CommError on 404
+        logging.warning('Could not restore uncertainty_measures.pkl (%s). Initializing new result_dict.', e)
+        result_dict = {}
     result_dict['semantic_ids'] = []
 
-    validation_generations_pickle = restore('validation_generations.pkl')
-    with open(validation_generations_pickle.name, 'rb') as infile:
-        validation_generations = pickle.load(infile)
+    # Restore validation generations; fallback to local cache if missing in WandB
+    try:
+        validation_generations_pickle = restore('validation_generations.pkl')
+        with open(validation_generations_pickle.name, 'rb') as infile:
+            validation_generations = pickle.load(infile)
+        logging.info('Restored validation_generations.pkl from previous run.')
+    except Exception as e:
+        logging.warning('Could not restore validation_generations.pkl (%s). Trying local cache lookup.', e)
+        patterns = [
+            os.path.join(wandb_dir, f'run-*{args.eval_wandb_runid}', 'validation_generations.pkl'),
+            os.path.join(wandb_dir, f'run-*{args.eval_wandb_runid}', 'files', 'validation_generations.pkl'),
+        ]
+        candidates = []
+        for pat in patterns:
+            candidates.extend(glob.glob(pat))
+        if not candidates:
+            # Fallback: search project results and current working directory recursively
+            cwd = os.getcwd()
+            candidates = glob.glob(os.path.join(cwd, '**', 'validation_generations.pkl'), recursive=True)
+        if candidates:
+            # Pick the most recent file
+            local_val_path = sorted(candidates, key=lambda p: os.path.getmtime(p))[-1]
+            with open(local_val_path, 'rb') as infile:
+                validation_generations = pickle.load(infile)
+            logging.info('Loaded validation_generations.pkl from local cache: %s', local_val_path)
+        else:
+            raise RuntimeError(f'validation_generations.pkl not found in WandB or local cache for run_id {args.eval_wandb_runid}. Please run generate_answers.py first.')
 
     entropies = defaultdict(list)
     validation_embeddings, validation_is_true, validation_answerable = [], [], []
@@ -257,20 +310,31 @@ def main(args):
             entropies['semantic_entropy'].append(pe)
 
             # ====== NOISE ROBUSTNESS ANALYSIS ======
-            # Compute SE_after under Gaussian noise perturbations
+            # Compute SE_after under Gaussian noise perturbations (PER-TOKEN)
             se_before = pe
             correctness = most_likely_answer['accuracy']
             
             for mu in NOISE_MEANS:
                 for sigma in NOISE_STDS:
                     se_after_samples = []
+                    all_noise_values = []  # Track all noise added across samples
                     
                     for _ in range(N_NOISE_SAMPLES):
-                        # Add Gaussian noise to log-likelihoods
-                        noise = np.random.normal(mu, sigma, len(log_liks_agg))
-                        noisy_log_liks_agg = [ll + n for ll, n in zip(log_liks_agg, noise)]
+                        # Add Gaussian noise to PER-TOKEN log-likelihoods, then aggregate
+                        noisy_log_liks_agg = []
                         
-                        # Recompute semantic entropy with noisy log-likelihoods
+                        for log_lik_seq in log_liks:  # For each answer's token sequence
+                            # Generate noise for each token in this answer
+                            token_noise = np.random.normal(mu, sigma, len(log_lik_seq))
+                            all_noise_values.extend(token_noise)  # Track all token-level noise
+                            
+                            # Add noise to each token's log-prob
+                            noisy_log_lik_seq = [ll + n for ll, n in zip(log_lik_seq, token_noise)]
+                            
+                            # Aggregate: mean of noisy per-token log-probs
+                            noisy_log_liks_agg.append(np.mean(noisy_log_lik_seq))
+                        
+                        # Recompute semantic entropy with noisy aggregated log-likelihoods
                         noisy_log_likelihood_per_semantic_id = logsumexp_by_id(
                             semantic_ids, noisy_log_liks_agg, agg='sum_normalized')
                         noisy_se = predictive_entropy_rao(noisy_log_likelihood_per_semantic_id)
@@ -280,10 +344,13 @@ def main(args):
                     se_mean = np.mean(se_after_samples)
                     se_std = np.std(se_after_samples)
                     delta_se = se_mean - se_before
+                    mean_noise = np.mean(all_noise_values)  # Empirical mean of ALL token-level noise
                     
                     # Store noise results
                     noise_record = {
                         'question_id': tid,
+                        'question': question,
+                        'generated_answers': responses,  # List of 10 generated answers
                         'mu': mu,
                         'sigma': sigma,
                         'se_before': float(se_before),
@@ -291,6 +358,7 @@ def main(args):
                         'se_mean': float(se_mean),
                         'se_std': float(se_std),
                         'delta_se': float(delta_se),
+                        'mean_noise': float(mean_noise),
                         'correctness': float(correctness)
                     }
                     

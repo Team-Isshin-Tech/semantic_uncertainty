@@ -1,0 +1,339 @@
+\documentclass{article}
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}  % For equation, aligned, boxed, etc.
+\usepackage{amssymb}  % For \mathbb and additional math symbols
+\usepackage{geometry} % (Optional) nicer margins; does not change content/equations
+\usepackage{booktabs} % For cleaner tables
+\geometry{margin=1in}
+
+\title{Semantic Entropy Pipeline Equations}
+\author{Baskarakurukkal Praveenasarma}
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\section{Mathematical Formulation}
+
+\subsection{Notation}
+
+We define the following notation used throughout the paper:
+\begin{itemize}
+    \item $q$ --- a question or query
+    \item $\boldsymbol{a} = a_1, a_2, \ldots, a_N$ --- a set of $N$ generated answers (responses)
+    \item $\mathcal{V}$ --- vocabulary of the language model with size $|{\mathcal{V}}|$
+    \item $\boldsymbol{z}_{i,t}$ --- logits (unnormalized scores) for answer $a_i$ at token position $t$, where $\boldsymbol{z}_{i,t} \in \mathbb{R}^{|{\mathcal{V}}|}$
+    \item $\ell_{i,t}$ --- log-probability (log-likelihood) of the $t$-th token in answer $a_i$
+    \item $\bar{\ell}_i = \frac{1}{T_i} \sum_{t=1}^{T_i} \ell_{i,t}$ --- mean (length-normalized) log-likelihood for answer $a_i$ with $T_i$ tokens
+    \item $\mathcal{C}$ --- semantic clustering via equivalence relation (determined by entailment model)
+    \item $c_i \in \{1, 2, \ldots, K\}$ --- semantic cluster (group) membership of answer $a_i$, where $K$ is the number of unique semantic clusters
+    \item $\mathcal{P}_k$ --- log-likelihood of semantic cluster $k$ (aggregated across answers in that cluster)
+    \item $p_k = e^{\mathcal{P}_k}$ --- probability mass of semantic cluster $k$ (in probability space)
+    \item $H$ --- entropy (uncertainty measure)
+    \item $\boldsymbol{\epsilon} \sim \mathcal{N}(\mu, \sigma^2)$ --- Gaussian noise added to logits/log-likelihoods for robustness analysis
+\end{itemize}
+
+\subsection{Generation and Logit Extraction}
+
+\begin{equation}
+\boldsymbol{z}_{i,t} = \text{LM}(q, a_{i,1:t-1}) \in \mathbb{R}^{|{\mathcal{V}}|}
+\label{eq:logits}
+\end{equation}
+The language model produces unnormalized logits (scores) for each token position $t$ in answer $a_i$, conditioned on the question $q$ and all previously generated tokens. This is extracted from \texttt{outputs.scores} in the model's generation output.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/models/huggingface\_models.py}
+    \item Function: \texttt{predict()}
+    \item Line: 417 --- \texttt{outputs.scores is a tuple of len = n\_generated\_tokens}
+    \item Variable: \texttt{outputs.scores}
+\end{itemize}
+
+\subsection{Token Probability (Per-Token Log-Likelihood)}
+
+\begin{equation}
+\ell_{i,t} = \log p(a_{i,t} \mid q, a_{i,1:t-1}) = \log \frac{e^{z_{i,t,a_{i,t}}}}{\sum_{v \in \mathcal{V}} e^{z_{i,t,v}}} = z_{i,t,a_{i,t}} - \log \sum_{v \in \mathcal{V}} e^{z_{i,t,v}}
+\label{eq:token_logprob}
+\end{equation}
+
+Token probability is computed using the log-softmax (or log-softmax via normalized transition scores). With \texttt{normalize\_logits=True}, the HuggingFace \texttt{compute\_transition\_scores()} method internally applies log-softmax normalization.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/models/huggingface\_models.py}
+    \item Function: \texttt{predict()}
+    \item Lines: 422--430 --- \texttt{transition\_scores = self.model.compute\_transition\_scores(..., normalize\_logits=True)}
+    \item Variable: \texttt{log\_likelihoods = [score.item() for score in transition\_scores[0]]}
+\end{itemize}
+
+\textbf{Assumption:} Batch size is 1; \texttt{transition\_scores[0]} contains only the scores for the first (and only) sequence in the batch. The method applies log-softmax internally when \texttt{normalize\_logits=True}.
+
+\subsection{Sequence Log-Likelihood (Length-Normalized)}
+
+\begin{equation}
+\bar{\ell}_i = \frac{1}{T_i} \sum_{t=1}^{T_i} \ell_{i,t}
+\label{eq:seq_logprob_normalized}
+\end{equation}
+
+Each answer's log-likelihood is aggregated by averaging across all tokens. This normalization accounts for variable-length sequences.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/compute\_uncertainty\_measures.py}
+    \item Function: Main loop (starting line 291)
+    \item Line: 302 --- \texttt{log\_liks\_agg = [np.mean(log\_lik) for log\_lik in log\_liks]}
+    \item Variables: \texttt{log\_liks} (shape $N \times T_i$, list of per-token log-likelihoods), \texttt{log\_liks\_agg} (shape $N$, mean per answer)
+\end{itemize}
+
+\subsection{Semantic Clustering and Cluster Assignment}
+
+\begin{equation}
+c_i = \text{Entail}(a_i, a_j) \quad \forall j \neq i
+\label{eq:semantic_clustering}
+\end{equation}
+
+Answers are grouped into semantic equivalence clusters using bidirectional entailment checks. Two answers $a_i$ and $a_j$ are semantically equivalent if:
+\begin{equation}
+\text{Entail}(a_i \rightarrow a_j) = \text{ENTAIL} \quad \text{AND} \quad \text{Entail}(a_j \rightarrow a_i) = \text{ENTAIL}
+\label{eq:equivalence}
+\end{equation}
+(or a relaxed version: neither is a contradiction AND not both neutral). Equivalence classes become semantic cluster IDs $c_i \in \{1, \ldots, K\}$.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/uncertainty\_measures/semantic\_entropy.py}
+    \item Function: \texttt{get\_semantic\_ids(strings\_list, model, ...)}
+    \item Lines: 173--195 --- Implements bidirectional equivalence checking and cluster assignment
+    \item Variable: \texttt{semantic\_ids} (length $N$, values in $\{0, 1, \ldots, K-1\}$)
+\end{itemize}
+
+\textbf{Cluster Assignment Entropy:}
+
+\begin{equation}
+H_{\text{cluster}} = -\sum_{k=1}^{K} p_k^{\text{cluster}} \log p_k^{\text{cluster}}
+\label{eq:cluster_entropy}
+\end{equation}
+
+where $p_k^{\text{cluster}} = \frac{|\{i : c_i = k\}|}{N}$ is the proportion of answers assigned to cluster $k$.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/uncertainty\_measures/semantic\_entropy.py}
+    \item Function: \texttt{cluster\_assignment\_entropy(semantic\_ids)}
+    \item Lines: 249--267
+    \item Implementation:
+    \begin{verbatim}
+    counts = np.bincount(semantic_ids)
+    probabilities = counts / n_generations
+    entropy = - (probabilities * np.log(probabilities)).sum()
+    \end{verbatim}
+\end{itemize}
+
+\subsection{Semantic Clustering Log-Likelihood Aggregation (LogSumExp)}
+
+\begin{equation}
+\mathcal{P}_k = \log \sum_{i : c_i = k} p(a_i \mid q) = \log \sum_{i : c_i = k} e^{\bar{\ell}_i}
+\label{eq:logsumexp_raw}
+\end{equation}
+
+Raw log-sum-exp operation: aggregate probabilities of all answers in semantic cluster $k$.
+
+For numerical stability and normalization, the code implements:
+\begin{equation}
+\tilde{\ell}_i = \bar{\ell}_i - \log \sum_{j=1}^{N} e^{\bar{\ell}_j}
+\label{eq:normalize_logprobs}
+\end{equation}
+
+Then:
+\begin{equation}
+\mathcal{P}_k = \log \sum_{i : c_i = k} e^{\tilde{\ell}_i}
+\label{eq:logsumexp_normalized}
+\end{equation}
+
+The normalization ensures that $\sum_{k=1}^{K} e^{\mathcal{P}_k} = 1$ (probabilities sum to 1).
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/uncertainty\_measures/semantic\_entropy.py}
+    \item Function: \texttt{logsumexp\_by\_id(semantic\_ids, log\_likelihoods, agg='sum\_normalized')}
+    \item Lines: 208--231
+    \item Implementation (with variable names from code):
+    \begin{verbatim}
+    for uid in unique_ids:
+        id_indices = [pos for pos, x in enumerate(semantic_ids) if x == uid]
+        id_log_likelihoods = [log_likelihoods[i] for i in id_indices]
+        # Normalize: subtract global logsumexp
+        log_lik_norm = id_log_likelihoods - np.log(np.sum(np.exp(log_likelihoods)))
+        # Aggregate within cluster
+        logsumexp_value = np.log(np.sum(np.exp(log_lik_norm)))
+        log_likelihood_per_semantic_id.append(logsumexp_value)
+    \end{verbatim}
+    \item Variables: \texttt{log\_likelihoods} (input, per-answer aggregated), \texttt{semantic\_ids} (cluster assignments), \texttt{log\_likelihood\_per\_semantic\_id} (output, cluster log-probabilities)
+\end{itemize}
+
+\textbf{Assumption:} Cluster IDs are consecutive integers starting from 0. The normalization constant $\log \sum_{j=1}^{N} e^{\bar{\ell}_j}$ is computed once and applied to all clusters.
+
+\subsection{Semantic Entropy (Predictive Entropy over Semantic Clusters)}
+
+\begin{equation}
+H_{\text{SE}} = -\sum_{k=1}^{K} p_k \log p_k = -\sum_{k=1}^{K} e^{\mathcal{P}_k} \cdot \mathcal{P}_k
+\label{eq:semantic_entropy}
+\end{equation}
+
+Semantic entropy measures uncertainty over the $K$ semantic clusters, where probability mass $p_k = e^{\mathcal{P}_k}$ is derived from normalized log-likelihoods.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/uncertainty\_measures/semantic\_entropy.py}
+    \item Function: \texttt{predictive\_entropy\_rao(log\_probs)}
+    \item Lines: 244--247
+    \item Implementation:
+    \begin{verbatim}
+    entropy = -np.sum(np.exp(log_probs) * log_probs)
+    \end{verbatim}
+    \item Variable: \texttt{log\_probs} receives \texttt{log\_likelihood\_per\_semantic\_id}
+\end{itemize}
+
+The function name ``Rao'' refers to the Rao entropy formula, which computes entropy directly from log-probabilities without intermediate exponentiation (though this code does exponentiate, a more stable form would use \texttt{scipy.special.logsumexp}).
+
+\subsection{Token-Level Predictive Entropy (Regular Entropy)}
+
+\begin{equation}
+H_{\text{regular}} = -\frac{1}{M} \sum_{t=1}^{M} \ell_t = \mathbb{E}_{t}[-\log p(a_t)]
+\label{eq:regular_entropy}
+\end{equation}
+
+Token-level entropy computed as the mean of (negative) token log-likelihoods across all tokens $M$ in all answers. This is a baseline entropy measure that does not account for semantic clustering.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/uncertainty/uncertainty\_measures/semantic\_entropy.py}
+    \item Function: \texttt{predictive\_entropy(log\_probs)}
+    \item Lines: 237--241
+    \item Implementation:
+    \begin{verbatim}
+    entropy = -np.sum(log_probs) / len(log_probs)
+    \end{verbatim}
+    \item Variable: \texttt{log\_probs} receives the list \texttt{log\_liks\_agg} (per-answer aggregated likelihoods)
+\end{itemize}
+
+\subsection{Noise Robustness Analysis: Per-Token Gaussian Perturbation}
+
+To measure robustness to logit perturbations, Gaussian noise is added independently to each token's log-likelihood:
+
+\begin{equation}
+\ell_{i,t}^{(\text{noisy})} = \ell_{i,t} + \epsilon_{i,t}, \quad \epsilon_{i,t} \sim \mathcal{N}(\mu, \sigma^2)
+\label{eq:noisy_token_logprob}
+\end{equation}
+
+The noisy sequence log-likelihood is then:
+\begin{equation}
+\bar{\ell}_i^{(\text{noisy})} = \frac{1}{T_i} \sum_{t=1}^{T_i} \ell_{i,t}^{(\text{noisy})}
+\label{eq:noisy_seq_logprob}
+\end{equation}
+
+Semantic entropy is recomputed with the noisy aggregated likelihoods:
+\begin{equation}
+H_{\text{SE}}^{(\text{noisy})} = -\sum_{k=1}^{K} e^{\mathcal{P}_k^{(\text{noisy})}} \cdot \mathcal{P}_k^{(\text{noisy})}
+\label{eq:noisy_semantic_entropy}
+\end{equation}
+
+This process is repeated $S$ times (e.g., $S = 100$) to generate $S$ samples of noisy semantic entropy.
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/compute\_uncertainty\_measures.py}
+    \item Function: Main loop (starting line 313)
+    \item Lines: 313--346 --- Per-token noise and entropy recomputation
+    \item Relevant variables:
+    \begin{itemize}
+        \item \texttt{mu, sigma} --- noise mean and standard deviation parameters
+        \item \texttt{token\_noise = np.random.normal(mu, sigma, len(log\_lik\_seq))} --- per-token Gaussian noise (line 329)
+        \item \texttt{noisy\_log\_lik\_seq = [ll + n for ll, n in zip(log\_lik\_seq, token\_noise)]} --- noisy log-likelihoods (line 331)
+        \item \texttt{noisy\_log\_liks\_agg.append(np.mean(noisy\_log\_lik\_seq))} --- aggregated noisy likelihood (line 335)
+        \item \texttt{noisy\_se = predictive\_entropy\_rao(noisy\_log\_likelihood\_per\_semantic\_id)} --- noisy semantic entropy (line 340)
+        \item \texttt{se\_after\_samples} --- list of $S$ noisy entropy samples (line 337)
+    \end{itemize}
+\end{itemize}
+
+\textbf{Assumption:} Noise is applied independently to each token in each answer. Aggregate noise mean is computed as $\bar{\epsilon} = \frac{1}{N \cdot T} \sum_{i=1}^{N} \sum_{t=1}^{T_i} \epsilon_{i,t}$.
+
+\subsection{Change in Semantic Entropy under Perturbation}
+
+\begin{equation}
+\Delta H_{\text{SE}} = \mathbb{E}[H_{\text{SE}}^{(\text{noisy})}] - H_{\text{SE}}
+\label{eq:delta_se}
+\end{equation}
+
+where the expectation is taken over $S$ noise samples. The mean and standard deviation of the $S$ samples are:
+\begin{equation}
+\mathbb{E}[H_{\text{SE}}^{(\text{noisy})}] = \frac{1}{S} \sum_{s=1}^{S} H_{\text{SE}}^{(s)}, \quad \text{SD}[H_{\text{SE}}^{(\text{noisy})}] = \sqrt{\frac{1}{S} \sum_{s=1}^{S} \left(H_{\text{SE}}^{(s)} - \mathbb{E}[H_{\text{SE}}^{(\text{noisy})}]\right)^2}
+\label{eq:se_statistics}
+\end{equation}
+
+\textbf{Code mapping:}
+\begin{itemize}
+    \item File: \texttt{semantic\_uncertainty/compute\_uncertainty\_measures.py}
+    \item Lines: 343--346
+    \item Implementation:
+    \begin{verbatim}
+    se_mean = np.mean(se_after_samples)
+    se_std = np.std(se_after_samples)
+    delta_se = se_mean - se_before
+    mean_noise = np.mean(all_noise_values)
+    \end{verbatim}
+    \item Variables: \texttt{se\_after\_samples} (list of $S=100$ noisy entropies), \texttt{se\_before} (baseline, \texttt{pe}), \texttt{se\_mean}, \texttt{se\_std}, \texttt{delta\_se}
+\end{itemize}
+
+\subsection{Summary of Information Flow}
+
+\subsection{Equation Value Ranges and Normalization}
+
+Table~\ref{tab:equation_ranges} provides example values and expected ranges for the key quantities in the pipeline to illustrate normalization and scale.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.40\textwidth} p{0.25\textwidth} p{0.25\textwidth}}
+\toprule
+\textbf{Equation / Quantity} & \textbf{Sample Values} & \textbf{Range of Values} \\
+\midrule
+Logits $\boldsymbol{z}_{i,t}$ (Eq.~\ref{eq:logits}) & $[3.2, -1.7, 0.4, \ldots]$ & $(-\infty, \infty)$ \\
+Token log-prob $\ell_{i,t}$ (Eq.~\ref{eq:token_logprob}) & $-2.30$ & $(-\infty, 0]$ \\
+Token prob $p(a_{i,t}\mid \cdot)$ & $0.10$ & $[0,1]$ \\
+Seq. mean log-prob $\bar{\ell}_i$ (Eq.~\ref{eq:seq_logprob_normalized}) & $-1.80$ & $(-\infty, 0]$ \\
+Normalized log-prob $\tilde{\ell}_i$ (Eq.~\ref{eq:normalize_logprobs}) & $-0.70$ & $(-\infty, 0]$, with $\sum_i e^{\tilde{\ell}_i}=1$ \\
+Cluster log-prob $\mathcal{P}_k$ (Eq.~\ref{eq:logsumexp_normalized}) & $-0.40$ & $(-\infty, 0]$, with $\sum_k e^{\mathcal{P}_k}=1$ \\
+Cluster prob $p_k=e^{\mathcal{P}_k}$ (Eq.~\ref{eq:semantic_entropy}) & $0.67$ & $[0,1]$, $\sum_k p_k=1$ \\
+Semantic entropy $H_{\text{SE}}$ (Eq.~\ref{eq:semantic_entropy}) & $0.45$ & $[0, \log K]$ \\
+Noisy entropy $H_{\text{SE}}^{(\text{noisy})}$ (Eq.~\ref{eq:noisy_semantic_entropy}) & $0.52$ & $[0, \log K]$ \\
+Entropy change $\Delta H_{\text{SE}}$ (Eq.~\ref{eq:delta_se}) & $0.07$ & $(-\infty, \infty)$ \\
+Mean noise $\bar{\epsilon}$ & $0.01$ & $(-\infty, \infty)$ (empirical) \\
+\bottomrule
+\end{tabular}
+\caption{Equation values with expected numeric ranges and normalization constraints.}
+\label{tab:equation_ranges}
+\end{table}
+
+The complete pipeline is summarized as:
+\begin{equation}
+\boxed{
+\begin{array}{lll}
+\text{Step 1:} & \text{Generate answers} & \boldsymbol{z}_{i,t} = \text{LM}(q, a_{i,1:t-1}) \\
+\text{Step 2:} & \text{Extract token log-probs} & \ell_{i,t} = \text{log\_softmax}(\boldsymbol{z}_{i,t})[\text{token\_id}] \\
+\text{Step 3:} & \text{Aggregate sequences} & \bar{\ell}_i = \frac{1}{T_i} \sum_{t} \ell_{i,t} \\
+\text{Step 4:} & \text{Cluster answers} & c_i = \text{Entail}(a_i, a_j) \text{ for all } j \\
+\text{Step 5:} & \text{Aggregate by cluster (LogSumExp)} & \mathcal{P}_k = \log \sum_{i: c_i = k} e^{\tilde{\ell}_i} \\
+\text{Step 6:} & \text{Compute semantic entropy} & H_{\text{SE}} = -\sum_{k=1}^{K} e^{\mathcal{P}_k} \mathcal{P}_k \\
+\text{Step 7 (optional):} & \text{Add per-token noise} & \ell_{i,t}^{(\text{noisy})} = \ell_{i,t} + \epsilon_{i,t}, \quad \epsilon_{i,t} \sim \mathcal{N}(\mu, \sigma^2) \\
+\text{Step 8 (optional):} & \text{Recompute noisy SE} & H_{\text{SE}}^{(\text{noisy})} = -\sum_{k=1}^{K} e^{\mathcal{P}_k^{(\text{noisy})}} \mathcal{P}_k^{(\text{noisy})} \\
+\end{array}
+}
+\label{eq:information_flow}
+\end{equation}
+
+\end{document}

@@ -24,6 +24,8 @@ import pandas as pd
 
 REQUIRED_FIELDS = {
     "question_id",
+    "question",
+    "generated_answers",
     "mu",
     "sigma",
     "se_before",
