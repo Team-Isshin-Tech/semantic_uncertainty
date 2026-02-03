@@ -149,6 +149,8 @@ def get_parser(stages=['generate', 'compute']):
         parser.add_argument('--reuse_entailment_model',
                             default=False, action=argparse.BooleanOptionalAction,
                             help='Use entailment model as p_true model.')
+        parser.add_argument('--num_workers', type=int, default=None,
+                            help='Number of parallel workers for uncertainty computation. Default: auto-detect (cpu_count - 1).')
     return parser
 
 

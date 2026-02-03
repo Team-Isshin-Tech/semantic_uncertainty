@@ -435,7 +435,13 @@ class HuggingfaceModel(BaseModel):
         if len(log_likelihoods) == 0:
             raise ValueError
 
-        return sliced_answer, log_likelihoods, last_token_embedding
+        # Extract logits and token IDs for noise perturbation in logit space
+        # outputs.scores is a tuple of tensors, each shape [bs, vocab_size]
+        # outputs.sequences is shape [bs, total_length] including input
+        logits_per_token = [score.cpu() for score in outputs.scores[:n_generated]]
+        generated_token_ids = outputs.sequences[0, n_input_token:n_input_token + n_generated].cpu().tolist()
+
+        return sliced_answer, log_likelihoods, last_token_embedding, logits_per_token, generated_token_ids
 
     def get_p_true(self, input_data):
         """Get the probability of the model anwering A (True) for the given input."""

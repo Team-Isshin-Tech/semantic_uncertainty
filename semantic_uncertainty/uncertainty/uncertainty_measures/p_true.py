@@ -31,7 +31,9 @@ def construct_few_shot_prompt(
             else:
                 temperature = 1.0
 
-            response, _, _ = model.predict(local_prompt, temperature)
+            # ====== FIX: Unpack all 5 return values ======
+            response, _, _, _, _ = model.predict(local_prompt, temperature)
+            # ====== END FIX ======
             logging.info('P_TRUE >> Current Response: '.ljust(25) + response)
 
             responses.append(response)

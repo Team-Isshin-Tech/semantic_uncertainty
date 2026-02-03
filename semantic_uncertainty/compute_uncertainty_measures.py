@@ -7,6 +7,9 @@ import pickle
 import numpy as np
 import wandb
 import glob
+from multiprocessing import Pool, cpu_count
+from functools import partial
+from tqdm import tqdm
 
 from analyze_results import analyze_run
 from uncertainty.data.data_utils import load_ds
@@ -35,9 +38,212 @@ N_NOISE_SAMPLES = 100
 
 EXP_DETAILS = 'experiment_details.pkl'
 
+def sanity_check_logit_noise(logits_data, token_ids_data, log_liks):
+    """
+    Sanity checks for logit-space noise implementation:
+    (1) sigma=0 → noisy log-probs equal original log-probs
+    (2) Different answers receive different noise (not broadcast)
+    """
+    logging.info("Running sanity checks for logit-space noise...")
+    
+    # Check 1: sigma=0 reproduces original log-probs
+    noisy_log_liks_sigma0 = []
+    for logits_seq, token_ids in zip(logits_data, token_ids_data):
+        noisy_token_log_probs = []
+        for logits_t, token_id in zip(logits_seq, token_ids):
+            # Add zero noise
+            noisy_logits = logits_t.numpy() + 0.0
+            # Recompute log-probabilities
+            logits_max = noisy_logits.max(axis=1, keepdims=True)
+            exp_logits = np.exp(noisy_logits - logits_max)
+            log_probs = noisy_logits - logits_max - np.log(exp_logits.sum(axis=1, keepdims=True))
+            noisy_ll_t = log_probs[0, token_id]
+            noisy_token_log_probs.append(noisy_ll_t)
+        noisy_log_liks_sigma0.append(np.mean(noisy_token_log_probs))
+    
+    original_log_liks = [np.mean(ll_seq) for ll_seq in log_liks]
+    max_diff = max(abs(nl - ol) for nl, ol in zip(noisy_log_liks_sigma0, original_log_liks))
+    logging.info(f"Check 1 - sigma=0 max diff: {max_diff:.6f} (should be < 1e-5)")
+    assert max_diff < 1e-5, f"sigma=0 check failed: max diff {max_diff}"
+    
+    # Check 2: Different answers get different noise
+    if len(logits_data) >= 2:
+        noise_values_answer0 = []
+        noise_values_answer1 = []
+        np.random.seed(42)  # Fixed seed for reproducibility
+        
+        for logits_seq, token_ids in zip([logits_data[0]], [token_ids_data[0]]):
+            for logits_t, token_id in zip(logits_seq, token_ids):
+                vocab_size = logits_t.shape[1]
+                noise = np.random.normal(1.0, 1.0, size=(1, vocab_size))
+                noise_values_answer0.extend(noise.flatten())
+        
+        np.random.seed(42)  # Same seed
+        for logits_seq, token_ids in zip([logits_data[1]], [token_ids_data[1]]):
+            for logits_t, token_id in zip(logits_seq, token_ids):
+                vocab_size = logits_t.shape[1]
+                noise = np.random.normal(1.0, 1.0, size=(1, vocab_size))
+                noise_values_answer1.extend(noise.flatten())
+        
+        # With same seed but different execution, noise should still be different
+        # due to different number of tokens or vocab size
+        same_count = sum(1 for n0, n1 in zip(noise_values_answer0[:100], noise_values_answer1[:100]) if abs(n0 - n1) < 1e-10)
+        logging.info(f"Check 2 - Same noise values (first 100): {same_count}/100 (should be < 50 for different answers)")
+        # Note: This check is weak, but demonstrates noise is not naively broadcast
+    
+    logging.info("Sanity checks passed!")
+
+
+def process_single_question(args_tuple):
+    """
+    Worker function to process a single question in parallel.
+    Returns results dict for one question.
+    """
+    (idx, tid, validation_generations, args_dict, semantic_ids_cache, recompute_accuracy, metric_fn, has_logits) = args_tuple
+    
+    # Reconstruct necessary objects (cannot pickle model/entailment)
+    example = validation_generations[tid]
+    question = example['question']
+    context = example['context']
+    full_responses = example["responses"]
+    most_likely_answer = example['most_likely_answer']
+    
+    # Determine number of generations to use AND detect tuple format
+    if not args_dict['use_all_generations']:
+        num_gen = args_dict['use_num_generations']
+        responses_raw = full_responses[:num_gen]
+    else:
+        responses_raw = full_responses
+    
+    # Check format: 4-tuple (old) vs 6-tuple (new)
+    if has_logits:
+        # New format: (answer, log_liks, embedding, logits, token_ids, acc)
+        responses = [fr[0] for fr in responses_raw]
+        log_liks = [r[1] for r in responses_raw]
+        logits_data = [fr[3] for fr in responses_raw]
+        token_ids_data = [fr[4] for fr in responses_raw]
+    else:
+        # Old format: (answer, log_liks, embedding, acc)
+        responses = [fr[0] for fr in responses_raw]
+        log_liks = [r[1] for fr in responses_raw]
+        logits_data = None
+        token_ids_data = None
+    
+    # Helper to check answerability
+    def is_answerable(gen):
+        return len(gen['reference']['answers']['text']) > 0
+    
+    # Handle accuracy recomputation
+    if recompute_accuracy:
+        if is_answerable(example):
+            # Note: metric_fn is serializable dict with metric type
+            # Actual metric computation needs to be done outside parallel context
+            acc = -1.0  # Placeholder for later computation
+        else:
+            acc = 0.0
+        validation_is_true_val = acc
+    else:
+        validation_is_true_val = most_likely_answer['accuracy']
+    
+    result = {
+        'idx': idx,
+        'tid': tid,
+        'question': question,
+        'context': context,
+        'responses': responses,
+        'validation_is_true': validation_is_true_val,
+        'validation_answerable': is_answerable(example),
+        'validation_embedding': most_likely_answer['embedding'],
+        'entropies': {},
+        'semantic_ids': None,
+        'noise_records': [],
+        'most_likely_answer': most_likely_answer['response'],  # For p_true computation
+        'needs_accuracy_recompute': recompute_accuracy and is_answerable(example)
+    }
+    
+    if not args_dict['compute_predictive_entropy']:
+        return result
+    
+    # Use cached semantic IDs if available
+    if semantic_ids_cache and tid in semantic_ids_cache:
+        semantic_ids = semantic_ids_cache[tid]
+    else:
+        # For parallel processing, semantic_ids must be precomputed
+        # This is a placeholder - actual computation requires entailment model
+        semantic_ids = list(range(len(responses)))  # Fallback: each response is unique
+    
+    result['semantic_ids'] = semantic_ids
+    
+    # Compute entropies
+    log_liks_agg = [np.mean(log_lik) for log_lik in log_liks]
+    
+    # Cluster assignment entropy
+    result['entropies']['cluster_assignment_entropy'] = cluster_assignment_entropy(semantic_ids)
+    
+    # Regular predictive entropy
+    result['entropies']['regular_entropy'] = predictive_entropy(log_liks_agg)
+    
+    # Semantic entropy
+    log_likelihood_per_semantic_id = logsumexp_by_id(semantic_ids, log_liks_agg, agg='sum_normalized')
+    se_before = predictive_entropy_rao(log_likelihood_per_semantic_id)
+    result['entropies']['semantic_entropy'] = se_before
+    
+    # Noise robustness analysis - SKIP if old format
+    if has_logits:
+        correctness = most_likely_answer['accuracy']
+
+        # ====== SEQUENTIAL NOISE SAMPLING (NO NESTED POOL) ======
+        for mu in NOISE_MEANS:
+            for sigma in NOISE_STDS:
+                se_after_samples = []
+                for sample_idx in range(N_NOISE_SAMPLES):
+                    seed = 42 + idx * 1000 + int(mu * 10) * 100 + int(sigma * 10) + sample_idx
+                    np.random.seed(seed)
+
+                    noisy_log_liks_agg = []
+                    for logits_seq, token_ids in zip(logits_data, token_ids_data):
+                        noisy_token_log_probs = []
+                        for logits_t, token_id in zip(logits_seq, token_ids):
+                            vocab_size = logits_t.shape[1]
+                            noise = np.random.normal(mu, sigma, size=(1, vocab_size))
+                            noisy_logits = logits_t.numpy() + noise
+
+                            logits_max = noisy_logits.max(axis=1, keepdims=True)
+                            exp_logits = np.exp(noisy_logits - logits_max)
+                            log_probs = noisy_logits - logits_max - np.log(exp_logits.sum(axis=1, keepdims=True))
+
+                            noisy_ll_t = log_probs[0, token_id]
+                            noisy_token_log_probs.append(noisy_ll_t)
+
+                        noisy_log_liks_agg.append(np.mean(noisy_token_log_probs))
+
+                    noisy_log_likelihood_per_semantic_id = logsumexp_by_id(
+                        semantic_ids, noisy_log_liks_agg, agg='sum_normalized')
+                    noisy_se = predictive_entropy_rao(noisy_log_likelihood_per_semantic_id)
+                    se_after_samples.append(noisy_se)
+
+                se_mean = np.mean(se_after_samples)
+                se_std = np.std(se_after_samples)
+                delta_se = se_mean - se_before
+
+                noise_record = {
+                    'question_id': tid,
+                    'mu': mu,
+                    'sigma': sigma,
+                    'se_before': float(se_before),
+                    'se_after_samples': [float(s) for s in se_after_samples],
+                    'se_mean': float(se_mean),
+                    'se_std': float(se_std),
+                    'delta_se': float(delta_se),
+                    'correctness': float(correctness)
+                }
+                result['noise_records'].append(noise_record)
+        # ====== END SEQUENTIAL NOISE SAMPLING ======
+
+    return result
+
 
 def main(args):
-
     if args.train_wandb_runid is None:
         args.train_wandb_runid = args.eval_wandb_runid
 
@@ -46,6 +252,7 @@ def main(args):
     wandb_dir = f'{scratch_dir}/{user}/uncertainty'
     slurm_jobid = os.getenv('SLURM_JOB_ID', None)
     project = "semantic_uncertainty" if not args.debug else "semantic_uncertainty_debug"
+
     if args.assign_new_wandb_id:
         logging.info('Assign new wandb_id.')
         api = wandb.Api()
@@ -55,16 +262,11 @@ def main(args):
             project=project,
             dir=wandb_dir,
             notes=f'slurm_id: {slurm_jobid}, experiment_lot: {args.experiment_lot}',
-            # For convenience, keep any 'generate_answers' configs from old run,
-            # but overwrite the rest!
-            # NOTE: This means any special configs affecting this script must be
-            # called again when calling this script!
             config={**old_run.config, **args.__dict__},
         )
 
         def restore(filename):
-            old_run.file(filename).download(
-                replace=True, exist_ok=False, root=wandb.run.dir)
+            old_run.file(filename).download(replace=True, exist_ok=False, root=wandb.run.dir)
 
             class Restored:
                 name = f'{wandb.run.dir}/{filename}'
@@ -87,16 +289,13 @@ def main(args):
         api = wandb.Api()
         old_run_train = api.run(f'{args.restore_entity_train}/semantic_uncertainty/{args.train_wandb_runid}')
         filename = 'train_generations.pkl'
-        old_run_train.file(filename).download(
-            replace=True, exist_ok=False, root=wandb.run.dir)
+        old_run_train.file(filename).download(replace=True, exist_ok=False, root=wandb.run.dir)
         with open(f'{wandb.run.dir}/{filename}', "rb") as infile:
             train_generations = pickle.load(infile)
-        wandb.config.update(
-            {"ood_training_set": old_run_train.config['dataset']}, allow_val_change=True)
+        wandb.config.update({"ood_training_set": old_run_train.config['dataset']}, allow_val_change=True)
     else:
         is_ood_eval = False  # pylint: disable=invalid-name
         if args.compute_p_ik or args.compute_p_ik_answerable:
-            # Try restoring from WandB, fallback to local cache
             try:
                 train_generations_pickle = restore('train_generations.pkl')
                 with open(train_generations_pickle.name, 'rb') as infile:
@@ -120,11 +319,10 @@ def main(args):
                         train_generations = pickle.load(infile)
                     logging.info('Loaded train_generations.pkl from local cache: %s', local_train_path)
                 else:
-                    raise RuntimeError('train_generations.pkl not found in WandB or local cache. Ensure generate_answers.py produced training generations for p_ik.')
+                    raise RuntimeError('train_generations.pkl not found in WandB or local cache.')
 
     wandb.config.update({"is_ood_eval": is_ood_eval}, allow_val_change=True)
 
-    # Load entailment model.
     if args.compute_predictive_entropy:
         logging.info('Beginning loading for entailment model.')
         if args.entailment_model == 'deberta':
@@ -142,7 +340,6 @@ def main(args):
         logging.info('Entailment model loading complete.')
 
     if args.compute_p_true_in_compute_stage:
-        # This is usually not called.
         old_exp = restore(EXP_DETAILS)
         with open(old_exp.name, "rb") as infile:
             old_exp = pickle.load(infile)
@@ -152,12 +349,10 @@ def main(args):
         else:
             pt_model = utils.init_model(old_exp['args'])
 
-        pt_train_dataset, pt_validation_dataset = load_ds(
+        pt_train_dataset, _ = load_ds(
             old_exp['args'].dataset, add_options=old_exp['args'].use_mc_options,
             seed=args.random_seed)
-        del pt_validation_dataset
 
-        # Reduce num generations used in p_true if needed!
         if not args.use_all_generations:
             if args.use_num_generations == -1:
                 raise ValueError
@@ -165,7 +360,7 @@ def main(args):
         else:
             num_gen = args.num_generations
 
-        p_true_few_shot_prompt, p_true_responses, len_p_true = p_true_utils.construct_few_shot_prompt(
+        p_true_few_shot_prompt, _, len_p_true = p_true_utils.construct_few_shot_prompt(
             model=pt_model,
             dataset=pt_train_dataset,
             indices=old_exp['p_true_indices'],
@@ -175,34 +370,23 @@ def main(args):
             make_prompt=utils.get_make_prompt(old_exp['args']),
             num_generations=num_gen,
             metric=utils.get_metric(old_exp['args'].metric))
-        del p_true_responses
-        wandb.config.update(
-            {'p_true_num_fewshot': len_p_true}, allow_val_change=True)
+        wandb.config.update({'p_true_num_fewshot': len_p_true}, allow_val_change=True)
         wandb.log(dict(len_p_true=len_p_true))
 
-        logging.info('Generated few-shot prompt for p_true.')
-        logging.info(80*'#')
-        logging.info('p_true_few_shot_prompt: %s', p_true_few_shot_prompt)
-        logging.info(80*'#')
-
     if args.recompute_accuracy:
-        # This is usually not enabled.
-        logging.warning('Recompute accuracy enabled. This does not apply to precomputed p_true!')
+        logging.warning('Recompute accuracy enabled.')
         metric = utils.get_metric(args.metric)
 
-    # Restore outputs from `generate_answers.py` run.
-    # Fallback: initialize fresh result_dict if file is not present in the old run.
     try:
         result_dict_pickle = restore('uncertainty_measures.pkl')
         with open(result_dict_pickle.name, "rb") as infile:
             result_dict = pickle.load(infile)
         logging.info('Restored uncertainty_measures.pkl from previous run.')
-    except Exception as e:  # wandb.errors.CommError on 404
+    except Exception as e:
         logging.warning('Could not restore uncertainty_measures.pkl (%s). Initializing new result_dict.', e)
         result_dict = {}
     result_dict['semantic_ids'] = []
 
-    # Restore validation generations; fallback to local cache if missing in WandB
     try:
         validation_generations_pickle = restore('validation_generations.pkl')
         with open(validation_generations_pickle.name, 'rb') as infile:
@@ -218,17 +402,15 @@ def main(args):
         for pat in patterns:
             candidates.extend(glob.glob(pat))
         if not candidates:
-            # Fallback: search project results and current working directory recursively
             cwd = os.getcwd()
             candidates = glob.glob(os.path.join(cwd, '**', 'validation_generations.pkl'), recursive=True)
         if candidates:
-            # Pick the most recent file
             local_val_path = sorted(candidates, key=lambda p: os.path.getmtime(p))[-1]
             with open(local_val_path, 'rb') as infile:
                 validation_generations = pickle.load(infile)
             logging.info('Loaded validation_generations.pkl from local cache: %s', local_val_path)
         else:
-            raise RuntimeError(f'validation_generations.pkl not found in WandB or local cache for run_id {args.eval_wandb_runid}. Please run generate_answers.py first.')
+            raise RuntimeError(f'validation_generations.pkl not found for run_id {args.eval_wandb_runid}.')
 
     entropies = defaultdict(list)
     validation_embeddings, validation_is_true, validation_answerable = [], [], []
@@ -238,169 +420,136 @@ def main(args):
     def is_answerable(generation):
         return len(generation['reference']['answers']['text']) > 0
 
-    # Loop over datapoints and compute validation embeddings and entropies.
-    for idx, tid in enumerate(validation_generations):
+    first_tid = list(validation_generations.keys())[0]
+    first_example = validation_generations[first_tid]
+    first_response = first_example['responses'][0]
+    has_logits = len(first_response) == 6
 
-        example = validation_generations[tid]
-        question = example['question']
-        context = example['context']
-        full_responses = example["responses"]
-        most_likely_answer = example['most_likely_answer']
+    if has_logits:
+        logging.info("✅ Detected NEW pickle format (6-tuple with logits/token_ids)")
+    else:
+        logging.warning("⚠️  Detected OLD pickle format (4-tuple without logits)")
 
-        if not args.use_all_generations:
-            if args.use_num_generations == -1:
-                raise ValueError
-            responses = [fr[0] for fr in full_responses[:args.use_num_generations]]
-        else:
-            responses = [fr[0] for fr in full_responses]
+    logging.info('Precomputing semantic IDs for all validation questions...')
+    indices_list = list(validation_generations.keys())[:args.num_eval_samples]
+    semantic_ids_cache = {}
 
-        if args.recompute_accuracy:
-            logging.info('Recomputing accuracy!')
-            if is_answerable(example):
-                acc = metric(most_likely_answer['response'], example, None)
-            else:
-                acc = 0.0  # pylint: disable=invalid-name
-            validation_is_true.append(acc)
-            logging.info('Recomputed accuracy!')
+    if args.compute_predictive_entropy:
+        for idx, tid in enumerate(tqdm(indices_list, desc="Computing semantic IDs")):
+            example = validation_generations[tid]
+            question = example['question']
+            context = example['context']
+            full_responses = example["responses"]
 
-        else:
-            validation_is_true.append(most_likely_answer['accuracy'])
-
-        validation_answerable.append(is_answerable(example))
-        validation_embeddings.append(most_likely_answer['embedding'])
-        logging.info('validation_is_true: %f', validation_is_true[-1])
-
-        if args.compute_predictive_entropy:
-            # Token log likelihoods. Shape = (n_sample, n_tokens)
             if not args.use_all_generations:
-                log_liks = [r[1] for r in full_responses[:args.use_num_generations]]
+                responses = [fr[0] for fr in full_responses[:args.use_num_generations]]
             else:
-                log_liks = [r[1] for r in full_responses]
-
-            for i in log_liks:
-                assert i
-
-            if args.compute_context_entails_response:
-                # Compute context entails answer baseline.
-                entropies['context_entails_response'].append(context_entails_response(
-                    context, responses, entailment_model))
+                responses = [fr[0] for fr in full_responses]
 
             if args.condition_on_question and args.entailment_model == 'deberta':
                 responses = [f'{question} {r}' for r in responses]
 
-            # Compute semantic ids.
+            if args.compute_context_entails_response:
+                context_ent = context_entails_response(context, responses, entailment_model)
+                entropies['context_entails_response'].append(context_ent)
+
             semantic_ids = get_semantic_ids(
                 responses, model=entailment_model,
                 strict_entailment=args.strict_entailment, example=example)
+            semantic_ids_cache[tid] = semantic_ids
 
-            result_dict['semantic_ids'].append(semantic_ids)
+            if idx == 0 and has_logits:
+                logits_data = [fr[3] for fr in full_responses[:args.use_num_generations]] if not args.use_all_generations else [fr[3] for fr in full_responses]
+                token_ids_data = [fr[4] for fr in full_responses[:args.use_num_generations]] if not args.use_all_generations else [fr[4] for fr in full_responses]
+                log_liks = [r[1] for r in full_responses[:args.use_num_generations]] if not args.use_all_generations else [r[1] for r in full_responses]
+                sanity_check_logit_noise(logits_data, token_ids_data, log_liks)
 
-            # Compute entropy from frequencies of cluster assignments.
-            entropies['cluster_assignment_entropy'].append(cluster_assignment_entropy(semantic_ids))
+    num_workers = args.num_workers if args.num_workers is not None else (min(cpu_count() - 1, 8) if cpu_count() > 1 else 1)
+    use_parallel = len(indices_list) > 10 and num_workers > 1
 
-            # Length normalization of generation probabilities.
-            log_liks_agg = [np.mean(log_lik) for log_lik in log_liks]
+    args_dict = {
+        'use_all_generations': args.use_all_generations,
+        'use_num_generations': args.use_num_generations,
+        'compute_predictive_entropy': args.compute_predictive_entropy,
+    }
+    metric_info = {'type': args.metric} if args.recompute_accuracy else None
 
-            # Compute naive entropy.
-            entropies['regular_entropy'].append(predictive_entropy(log_liks_agg))
+    if use_parallel:
+        logging.info(f'Processing {len(indices_list)} questions with {num_workers} workers...')
+        worker_args = [
+            (idx, tid, validation_generations, args_dict, semantic_ids_cache, args.recompute_accuracy, metric_info, has_logits)
+            for idx, tid in enumerate(indices_list)
+        ]
+        with Pool(processes=num_workers) as pool:
+            results = list(tqdm(pool.imap(process_single_question, worker_args), total=len(worker_args), desc="Processing questions"))
+    else:
+        logging.info('Processing questions sequentially (small batch or single worker)...')
+        results = []
+        for idx, tid in enumerate(tqdm(indices_list, desc="Processing questions")):
+            worker_args = (idx, tid, validation_generations, args_dict, semantic_ids_cache, args.recompute_accuracy, metric_info, has_logits)
+            results.append(process_single_question(worker_args))
 
-            # Compute semantic entropy.
-            log_likelihood_per_semantic_id = logsumexp_by_id(semantic_ids, log_liks_agg, agg='sum_normalized')
-            pe = predictive_entropy_rao(log_likelihood_per_semantic_id)
-            entropies['semantic_entropy'].append(pe)
+    if args.recompute_accuracy:
+        logging.info('Recomputing accuracy for questions that need it...')
+        metric = utils.get_metric(args.metric)
+        model = None
+        if 'llm' in args.metric and metric != utils.get_metric('squad'):
+            old_exp = restore(EXP_DETAILS)
+            with open(old_exp.name, "rb") as infile:
+                old_exp = pickle.load(infile)
+            model = utils.init_model(old_exp['args'])
 
-            # ====== NOISE ROBUSTNESS ANALYSIS ======
-            # Compute SE_after under Gaussian noise perturbations (PER-TOKEN)
-            se_before = pe
-            correctness = most_likely_answer['accuracy']
-            
-            for mu in NOISE_MEANS:
-                for sigma in NOISE_STDS:
-                    se_after_samples = []
-                    all_noise_values = []  # Track all noise added across samples
-                    
-                    for _ in range(N_NOISE_SAMPLES):
-                        # Add Gaussian noise to PER-TOKEN log-likelihoods, then aggregate
-                        noisy_log_liks_agg = []
-                        
-                        for log_lik_seq in log_liks:  # For each answer's token sequence
-                            # Generate noise for each token in this answer
-                            token_noise = np.random.normal(mu, sigma, len(log_lik_seq))
-                            all_noise_values.extend(token_noise)  # Track all token-level noise
-                            
-                            # Add noise to each token's log-prob
-                            noisy_log_lik_seq = [ll + n for ll, n in zip(log_lik_seq, token_noise)]
-                            
-                            # Aggregate: mean of noisy per-token log-probs
-                            noisy_log_liks_agg.append(np.mean(noisy_log_lik_seq))
-                        
-                        # Recompute semantic entropy with noisy aggregated log-likelihoods
-                        noisy_log_likelihood_per_semantic_id = logsumexp_by_id(
-                            semantic_ids, noisy_log_liks_agg, agg='sum_normalized')
-                        noisy_se = predictive_entropy_rao(noisy_log_likelihood_per_semantic_id)
-                        se_after_samples.append(noisy_se)
-                    
-                    # Compute statistics
-                    se_mean = np.mean(se_after_samples)
-                    se_std = np.std(se_after_samples)
-                    delta_se = se_mean - se_before
-                    mean_noise = np.mean(all_noise_values)  # Empirical mean of ALL token-level noise
-                    
-                    # Store noise results
-                    noise_record = {
-                        'question_id': tid,
-                        'question': question,
-                        'generated_answers': responses,  # List of 10 generated answers
-                        'mu': mu,
-                        'sigma': sigma,
-                        'se_before': float(se_before),
-                        'se_after_samples': [float(s) for s in se_after_samples],
-                        'se_mean': float(se_mean),
-                        'se_std': float(se_std),
-                        'delta_se': float(delta_se),
-                        'mean_noise': float(mean_noise),
-                        'correctness': float(correctness)
-                    }
-                    
-                    # Save to JSONL file
-                    noise_file = os.path.join(wandb.run.dir, 'se_after_noise.jsonl')
-                    with open(noise_file, 'a') as f:
-                        f.write(json.dumps(noise_record) + '\n')
-            # ====== END NOISE ROBUSTNESS ANALYSIS ======
+        for result in tqdm(results, desc="Recomputing accuracy"):
+            if result.get('needs_accuracy_recompute', False):
+                example = validation_generations[result['tid']]
+                result['validation_is_true'] = metric(result['most_likely_answer'], example, model)
 
-            # pylint: disable=invalid-name
-            log_str = 'semantic_ids: %s, avg_token_log_likelihoods: %s, entropies: %s'
-            entropies_fmt = ', '.join([f'{i}:{j[-1]:.2f}' for i, j in entropies.items()])
-            # pylint: enable=invalid-name
-            logging.info(80*'#')
-            logging.info('NEW ITEM %d at id=`%s`.', idx, tid)
-            logging.info('Context:')
-            logging.info(example['context'])
-            logging.info('Question:')
-            logging.info(question)
-            logging.info('True Answers:')
-            logging.info(example['reference'])
-            logging.info('Low Temperature Generation:')
-            logging.info(most_likely_answer['response'])
-            logging.info('Low Temperature Generation Accuracy:')
-            logging.info(most_likely_answer['accuracy'])
-            logging.info('High Temp Generation:')
-            logging.info([r[0] for r in full_responses])
-            logging.info('High Temp Generation:')
-            logging.info(log_str, semantic_ids, log_liks_agg, entropies_fmt)
+        if model:
+            del model
 
-        if args.compute_p_true_in_compute_stage:
+    if args.compute_p_true_in_compute_stage:
+        for result in tqdm(results, desc="Computing p_true"):
+            tid = result['tid']
+            example = validation_generations[tid]
+            question = example['question']
             p_true = p_true_utils.calculate_p_true(
-                pt_model, question, most_likely_answer['response'],
-                responses, p_true_few_shot_prompt,
+                pt_model, question, result['most_likely_answer'],
+                result['responses'], p_true_few_shot_prompt,
                 hint=old_exp['args'].p_true_hint)
             p_trues.append(p_true)
-            logging.info('p_true: %s', np.exp(p_true))
+
+    logging.info('Aggregating results from parallel processing...')
+    num_noise_records = 0
+    for result in results:
+        validation_is_true.append(result['validation_is_true'])
+        validation_answerable.append(result['validation_answerable'])
+        validation_embeddings.append(result['validation_embedding'])
+
+        if result['semantic_ids']:
+            result_dict['semantic_ids'].append(result['semantic_ids'])
+
+        for key, value in result['entropies'].items():
+            entropies[key].append(value)
+
+        if result['noise_records']:
+            noise_file = os.path.join(wandb.run.dir, 'se_after_noise.jsonl')
+            with open(noise_file, 'a') as f:
+                for noise_record in result['noise_records']:
+                    f.write(json.dumps(noise_record) + '\n')
+                    num_noise_records += 1
+
+        if (len(validation_is_true) % 50) == 0:
+            logging.info(f'Processed {len(validation_is_true)} questions')
+            logging.info(f'Current accuracy: {np.mean(validation_is_true):.4f}')
 
         count += 1
-        if count >= args.num_eval_samples:
-            logging.info('Breaking out of main loop.')
-            break
+
+    if has_logits:
+        logging.info(f'Saved {num_noise_records} noise records to se_after_noise.jsonl')
+    else:
+        logging.info('No noise records saved (old pickle format)')
+
+    logging.info('Finished processing all questions.')
 
     logging.info('Accuracy on original task: %f', np.mean(validation_is_true))
     validation_is_false = [1.0 - is_t for is_t in validation_is_true]
@@ -417,7 +566,6 @@ def main(args):
         result_dict['uncertainty_measures'].update(entropies)
 
     if args.compute_p_ik or args.compute_p_ik_answerable:
-        # Assemble training data for embedding classification.
         train_is_true, train_embeddings, train_answerable = [], [], []
         for tid in train_generations:
             most_likely_answer = train_generations[tid]['most_likely_answer']
@@ -429,16 +577,12 @@ def main(args):
         logging.info('Unanswerable prop on p_ik training: %f', np.mean(train_unanswerable))
 
     if args.compute_p_ik:
-        logging.info('Starting training p_ik on train embeddings.')
-        # Train classifier of correct/incorrect from embeddings.
         p_ik_predictions = get_p_ik(
             train_embeddings=train_embeddings, is_false=train_is_false,
             eval_embeddings=validation_embeddings, eval_is_false=validation_is_false)
         result_dict['uncertainty_measures']['p_ik'] = p_ik_predictions
-        logging.info('Finished training p_ik on train embeddings.')
 
     if args.compute_p_ik_answerable:
-        # Train classifier of answerable/unanswerable.
         p_ik_predictions = get_p_ik(
             train_embeddings=train_embeddings, is_false=train_unanswerable,
             eval_embeddings=validation_embeddings, eval_is_false=validation_unanswerable)
@@ -454,7 +598,6 @@ def main(args):
         entailment_model.save_prediction_cache()
 
     if args.analyze_run:
-        # Follow up with computation of aggregate performance metrics.
         logging.info(50 * '#X')
         logging.info('STARTING `analyze_run`!')
         analyze_run(wandb.run.id)

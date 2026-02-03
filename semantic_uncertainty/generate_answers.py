@@ -109,10 +109,10 @@ utils.setup_logger()
 
 
 def main(args):
+    logging.info("CWD: %s", os.getcwd())
     # ====== NEW CODE: Setup output directory and logging ======
     # run_dir = setup_run_output_directory(args)
     run_dir, artifacts_dir = setup_run_output_directory(args)
-
     # ====== END NEW CODE ======
 
 
@@ -147,17 +147,33 @@ def main(args):
     metric = utils.get_metric(args.metric)
 
     def save_and_copy(obj, filename):
-        # save using repo's utils (goes to wandb.run.dir)
-        utils.save(obj, filename)
+        """Save object to wandb and copy to artifacts directory."""
+        try:
+            # save using repo's utils (goes to wandb.run.dir)
+            utils.save(obj, filename)
+            logging.info(f"✅ Saved {filename} to wandb.run.dir: {wandb.run.dir}")
+        except Exception as e:
+            logging.error(f"❌ Failed to save {filename} to wandb: {e}")
+            raise
 
-        # copy into results/<run_id>/artifacts
-        src = os.path.join(wandb.run.dir, filename)
-        dst = os.path.join(artifacts_dir, filename)
-        if os.path.exists(src):
-            shutil.copy2(src, dst)
-            logging.info("Copied artifact to %s", dst)
-        else:
-            logging.warning("Expected artifact not found at %s", src)
+        try:
+            # copy into results/<run_id>/artifacts
+            src = os.path.join(wandb.run.dir, filename)
+            dst = os.path.join(artifacts_dir, filename)
+            
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                src_size = os.path.getsize(src) / (1024**2)
+                dst_size = os.path.getsize(dst) / (1024**2)
+                logging.info(f"✅ Copied {filename} to artifacts/")
+                logging.info(f"   Source: {src} ({src_size:.2f} MB)")
+                logging.info(f"   Dest:   {dst} ({dst_size:.2f} MB)")
+            else:
+                logging.error(f"❌ Source file not found at {src}")
+                raise FileNotFoundError(f"Source pickle file not found: {src}")
+        except Exception as e:
+            logging.error(f"❌ Failed to copy {filename} to artifacts: {e}")
+            raise
 
 
     # Load dataset.
@@ -287,7 +303,7 @@ def main(args):
                 # Temperature for first generation is always `0.1`.
                 temperature = 0.1 if i == 0 else args.temperature
 
-                predicted_answer, token_log_likelihoods, embedding = model.predict(
+                predicted_answer, token_log_likelihoods, embedding, logits_per_token, generated_token_ids = model.predict(
                     local_prompt, temperature)
                 embedding = embedding.cpu() if embedding is not None else None
 
@@ -321,7 +337,7 @@ def main(args):
                     logging.info('high-t prediction '.ljust(15) + str(i) + ' : ' + predicted_answer)
                     # Aggregate predictions over num_generations.
                     full_responses.append(
-                        (predicted_answer, token_log_likelihoods, embedding, acc))
+                        (predicted_answer, token_log_likelihoods, embedding, logits_per_token, generated_token_ids, acc))
 
             # Append all predictions for this example to `generations`.
             generations[example['id']]['responses'] = full_responses
@@ -335,7 +351,7 @@ def main(args):
                     # Get log likelihoods from all high-T generations
                     all_token_lls = []
                     for response_tuple in full_responses:
-                        _, token_ll, _, _ = response_tuple
+                        _, token_ll, _, _, _, _ = response_tuple
                         if token_ll:
                             all_token_lls.extend(token_ll)
                     if all_token_lls:
@@ -359,7 +375,13 @@ def main(args):
                 logging.info('p_true: %s', p_true)
 
         # Save generations for that split.
-        utils.save(generations, f'{dataset_split}_generations.pkl')
+        logging.info(f"Saving {dataset_split}_generations.pkl...")
+        try:
+            save_and_copy(generations, f'{dataset_split}_generations.pkl')
+            logging.info(f"✅ Successfully saved and copied {dataset_split}_generations.pkl")
+        except Exception as e:
+            logging.error(f"❌ CRITICAL: Failed to save {dataset_split}_generations.pkl: {e}")
+            raise
 
         # Log overall accuracy.
         accuracy = np.mean(accuracies)
@@ -372,16 +394,28 @@ def main(args):
                     'p_false':  [1 - p for p in p_trues],
                     'p_false_fixed':  [1 - np.exp(p) for p in p_trues],
                 }
-            utils.save(results_dict, 'uncertainty_measures.pkl')
+            logging.info("Saving validation uncertainty_measures.pkl...")
+            try:
+                save_and_copy(results_dict, 'uncertainty_measures.pkl')
+                logging.info("✅ Successfully saved and copied uncertainty_measures.pkl")
+            except Exception as e:
+                logging.error(f"❌ CRITICAL: Failed to save uncertainty_measures.pkl: {e}")
+                raise
 
-    # Save SE_before records
-    se_before_file = os.path.join(run_dir, 'se_before.jsonl')
-    with open(se_before_file, 'w') as f:
-        for record in records:
-            f.write(json.dumps(record) + '\n')
-    logging.info(f'Saved {len(records)} SE_before records to {se_before_file}')
+    logging.info("Saving experiment_details.pkl...")
+    try:
+        utils.save(experiment_details, 'experiment_details.pkl')
+        src = os.path.join(wandb.run.dir, 'experiment_details.pkl')
+        dst = os.path.join(artifacts_dir, 'experiment_details.pkl')
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            logging.info("✅ Successfully saved experiment_details.pkl")
+        else:
+            logging.error(f"❌ experiment_details.pkl not found at {src}")
+    except Exception as e:
+        logging.error(f"❌ CRITICAL: Failed to save experiment_details.pkl: {e}")
+        raise
 
-    utils.save(experiment_details, 'experiment_details.pkl')
     logging.info('Run complete.')
     del model
 
