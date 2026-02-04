@@ -135,3 +135,6 @@ dmypy.json
 
 # VSCODE
 .vscode
+
+results/validation_generations.pkl
+results/se_after_noise_complete.jsonl
