@@ -1,0 +1,44 @@
+====================================================================================================
+TOKEN-LEVEL AND SEQUENCE PROBABILITY ANALYSIS
+====================================================================================================
+
+FILES GENERATED:
+1. TOP_10_TOKEN_DETAILS.json - Full hierarchical structure
+2. TOP_10_TOKEN_LEVEL_ANALYSIS.csv - Flattened for analysis
+
+WHAT YOU CAN EXTRACT:
+
+1. SEQUENCE PROBABILITIES:
+   - Each token has its own probability (exponential of log-likelihood)
+   - Sequence: how probability changes across answer tokens
+   - Example: 'David' (0.85) 'Cameron' (0.12) = answer_prob = 0.85 × 0.12
+
+2. TOKEN IMPORTANCE (Entropy Contribution):
+   - High probability tokens → low entropy → certain
+   - Low probability tokens → high entropy → uncertain
+   - Token_Entropy = -p × log(p) shows which tokens are uncertain
+
+3. SEQUENCE PATTERNS:
+   - Decreasing probability: model confident early, uncertain later
+   - Increasing probability: model uncertain early, confident later
+   - Variable probability: inconsistent confidence across answer
+
+4. ANSWER CLUSTERING BY TOKEN PATTERNS:
+   - Short answers (2-3 tokens): model guesses single word confidently
+   - Long answers (5+ tokens): model generates explanation, may be less confident
+   - Token variance: how much confidence varies within answer
+
+====================================================================================================
+EXAMPLE ANALYSIS:
+====================================================================================================
+
+Question (Rank 1): What was the name of the Prime Minister in the T.V. series Yes Prime Minister
+
+Example Answer: 'mandy fields'
+Token-by-Token Probability:
+  Token 0: 'mandy' → Probability = 0.085402
+  Token 1: 'fields' → Probability = 0.887364
+
+Overall Answer Probability: 0.007366
+Note: Answer_prob ≈ Product of token probabilities
+      (Due to independence assumption in token generation)

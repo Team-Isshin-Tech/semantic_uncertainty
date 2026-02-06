@@ -1,0 +1,12 @@
+Metric,Value
+Total Records,4800
+Total Questions,400
+"Total (μ, σ) Configurations",12
+Global Mean SE Before,1.009167172
+Global Mean SE After,0.962659977
+Global Mean |ΔSE|,0.049804319
+Mean Absolute Bias,0.046507195
+Mean Spearman ρ,0.996793027
+Min Spearman ρ,0.993348288
+Configs with Significant SE Change (p<0.05),12
+Highly Sensitive Question Cases,160

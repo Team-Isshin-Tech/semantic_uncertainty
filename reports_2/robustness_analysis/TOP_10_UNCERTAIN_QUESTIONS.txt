@@ -1,0 +1,504 @@
+====================================================================================================
+TOP 10 MOST UNCERTAIN QUESTIONS
+(Ranked by SE_before - Baseline Semantic Entropy)
+====================================================================================================
+
+
+====================================================================================================
+RANK 1: SE_before = 2.253579
+====================================================================================================
+Question ID: bt_1031--61/61_537330.txt#0_0
+
+QUESTION TEXT:
+  What was the name of the Prime Minister in the T.V. series Yes Prime Minister
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [334], 'text': ['jim hacker']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: mandy fields
+
+  Answer  2: the name of the Prime Minister in Yes, Prime Minister is Maggie Beckett.
+
+  Answer  3: stephen macdonald
+
+  Answer  4: mandy moore
+
+  Answer  5: Tony Blair
+
+  Answer  6: David Cameron
+
+  Answer  7: mike hawkins
+
+  Answer  8: mandy rice
+
+  Answer  9: stephen fletcher-adams
+
+  Answer 10: Gordon Brown
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.253579
+  SE mean after noise:      2.236359
+  SE std (across samples):  0.021227
+  Delta SE (mean - before): -0.017220
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       David Cameron
+
+
+====================================================================================================
+RANK 2: SE_before = 2.203490
+====================================================================================================
+Question ID: bt_2892--150/150_2107251.txt#0_0
+
+QUESTION TEXT:
+  Who had a number one in 2011 with Grenade
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [80], 'text': ['bruno mars']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: Jay sean
+
+  Answer  2: 1st Week Week ft. Rihanna
+
+  Answer  3: zedd ft ariana grande
+
+  Answer  4: kylie & the cat
+
+  Answer  5: G.G. Ftizzy
+
+  Answer  6: 2 chainz
+
+  Answer  7: Usher
+
+  Answer  8: Miley Cyrus
+
+  Answer  9: Sky Ferreira
+
+  Answer 10: Justin Bieber
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.203490
+  SE mean after noise:      2.180088
+  SE std (across samples):  0.022871
+  Delta SE (mean - before): -0.023402
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       Rihanna
+
+
+====================================================================================================
+RANK 3: SE_before = 2.170353
+====================================================================================================
+Question ID: tc_69--158/158_2486.txt#0_1
+
+QUESTION TEXT:
+  Rita Coolidge sang the title song for which Bond film?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [459], 'text': ['octopussy']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: You Only Live Thrice
+
+  Answer  2: 'You Know My Name'
+
+  Answer  3: the world is not enough
+
+  Answer  4: 2027: A View From The Sky
+
+  Answer  5: 'My Funny Valentine'
+
+  Answer  6: the world is your oyster (the girl you choose)
+
+  Answer  7: the living daylights
+
+  Answer  8: the 1999 film "Russo and Steele"
+
+  Answer  9: the spy who love me
+
+  Answer 10: 'You're My Thunder' was featured in the 1995 film 'Tomorrow Never Dies'.
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.170353
+  SE mean after noise:      2.159042
+  SE std (across samples):  0.020173
+  Delta SE (mean - before): -0.011311
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       'You Know My Name' (2000)
+
+
+====================================================================================================
+RANK 4: SE_before = 2.161077
+====================================================================================================
+Question ID: sfq_668--20/20_1363097.txt#0_1
+
+QUESTION TEXT:
+  Which actress was born Demetria Gene Guynes in 1962?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [443], 'text': ['demi moore']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: alicia silverstone
+
+  Answer  2: kate beckinsale
+
+  Answer  3: melanie griffith
+
+  Answer  4: Demetria Georganne
+
+  Answer  5: lisa bonet
+
+  Answer  6: Demetria Michelle Johnson
+
+  Answer  7: Demi Moore
+
+  Answer  8: cybill shepherd
+
+  Answer  9: Demetria Guynes
+
+  Answer 10: madonna
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.161077
+  SE mean after noise:      2.155411
+  SE std (across samples):  0.024149
+  Delta SE (mean - before): -0.005666
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       Demetria Gene Guynes
+
+
+====================================================================================================
+RANK 5: SE_before = 2.151473
+====================================================================================================
+Question ID: bb_1997--80/80_876537.txt#0_1
+
+QUESTION TEXT:
+  What symbol(s) does the comic book hero Captain America have on his shield and chest?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [386], 'text': ['star']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: The American Flag and an Eagle.
+
+  Answer  2: four red stripes and a circle with an A in the center.
+
+  Answer  3: an eagle and a star
+
+  Answer  4: a shield with a red, white, and blue eagle clutching a spear.
+
+  Answer  5: the shield has an eagle clutching an American flag and the chest has a red, white, and blue shield with an emblem that consists of Captain America's shield and his initials, A.C.
+
+  Answer  6: a shield with a red, white, and blue design featuring a star, and the letters 'A' on his chest.
+
+  Answer  7: a shield with an eagle, and a red, white, and blue star on his chest.
+
+  Answer  8: shield contains an A in the middle, while his chest has a circle with A within it.
+
+  Answer  9: AAM and STAR.
+
+  Answer 10: an american eagle
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.151473
+  SE mean after noise:      2.145143
+  SE std (across samples):  0.017509
+  Delta SE (mean - before): -0.006330
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       a shield with an eagle and a red, white, and blue motif, and a chest symbol with a red, white, and blue motif.
+
+
+====================================================================================================
+RANK 6: SE_before = 2.145951
+====================================================================================================
+Question ID: dpql_3600--123/123_649287.txt#0_1
+
+QUESTION TEXT:
+  Which character was played by Linda Thorson in The Avengers?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [257], 'text': ['tara king']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: miss marple
+
+  Answer  2: Lady Jane Grey
+
+  Answer  3: the character who goes by the name 'Sword Master'
+
+  Answer  4: judy arlene holtz
+
+  Answer  5: the character Linda Barnes
+
+  Answer  6: the character name is Lady Blackbird.
+
+  Answer  7: the character codenamed 'Black Widow'
+
+  Answer  8: the character named Emma Peel
+
+  Answer  9: the character Jane Foster
+
+  Answer 10: linda thorson played the role of june davenport
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.145951
+  SE mean after noise:      2.132708
+  SE std (across samples):  0.023078
+  Delta SE (mean - before): -0.013243
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       the character Emma Peel.
+
+
+====================================================================================================
+RANK 7: SE_before = 2.140179
+====================================================================================================
+Question ID: sfq_10516--89/89_1704034.txt#0_0
+
+QUESTION TEXT:
+  Who won the young PFA player of the year 2011?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [765], 'text': ['jack wilshere']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: frank de bortoli
+
+  Answer  2: leonardo messi
+
+  Answer  3: yusuf mahmmod
+
+  Answer  4: jonny hernandez
+
+  Answer  5: Gabriel Obertan
+
+  Answer  6: Wayne Rooney
+
+  Answer  7: theo walbeck
+
+  Answer  8: joe hart
+
+  Answer  9: jordan hayes
+
+  Answer 10: jesse ennis
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.140179
+  SE mean after noise:      2.128981
+  SE std (across samples):  0.030525
+  Delta SE (mean - before): -0.011198
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       jordan henderson
+
+
+====================================================================================================
+RANK 8: SE_before = 2.138628
+====================================================================================================
+Question ID: qw_8714--28/28_287982.txt#0_0
+
+QUESTION TEXT:
+  "What kind of character is ""Touchstone"", who appears in Shakespeare's ""As You Like It""?"
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [308], 'text': ['clown']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: shakespeare's character touchstone is a character in the play who represents industry, skill, or learning.
+
+  Answer  2: a philosopher.
+
+  Answer  3: a comedic character who plays the role of a fool
+
+  Answer  4: Touchstone is a character that appears in Shakespeare's pastoral play As You Like It who is characterized as a ""quip and jesting kind of man"".
+
+  Answer  5: Touchstone is a character in Shakespeare's ""As You Like It"" who is portrayed as a foolish and gullible person.
+
+  Answer  6: a witty, witty rogue.
+
+  Answer  7: a comedic foil character
+
+  Answer  8: comedic relief
+
+  Answer  9: touchstone
+
+  Answer 10: A melancholic, wise, and witty character who uses the philosophical metaphor of 'touches' to convey various ideas related to self-reflection and introspection.
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.138628
+  SE mean after noise:      2.122651
+  SE std (across samples):  0.027815
+  Delta SE (mean - before): -0.015977
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       a character who is a source of wisdom and guidance.
+
+
+====================================================================================================
+RANK 9: SE_before = 2.138220
+====================================================================================================
+Question ID: qb_637--10/10_282457.txt#0_0
+
+QUESTION TEXT:
+  Which famous jewellers makes the Super Bowl Trophy?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [131], 'text': ['tiffany and co']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: bvlgari
+
+  Answer  2: Frédéric Cavaillès
+
+  Answer  3: rogers
+
+  Answer  4: jostens
+
+  Answer  5: sebring
+
+  Answer  6: the rogers family of new england
+
+  Answer  7: new york
+
+  Answer  8: roger taylor
+
+  Answer  9: the roman numeral society of the united states
+
+  Answer 10: robert greenberg
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.138220
+  SE mean after noise:      2.110863
+  SE std (across samples):  0.030870
+  Delta SE (mean - before): -0.027358
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       rogers
+
+
+====================================================================================================
+RANK 10: SE_before = 2.134921
+====================================================================================================
+Question ID: sfq_8322--184/184_1656059.txt#0_0
+
+QUESTION TEXT:
+  What was the stage name of the British comedian Chaim Reuben Weintrop?
+
+GROUND TRUTH ANSWERS:
+  {'answer_start': [464], 'text': ['bud flanagan']}
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with log-likelihoods):
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Answer  1: sir charles eck parry.
+
+  Answer  2: Chaim Witz
+
+  Answer  3: charles-henry wilkinson
+
+  Answer  4: charles anderson
+
+  Answer  5: jim cugnot (also known as jim cugnot, or jimmi, or charlie cugnot)
+
+  Answer  6: mark hammill
+
+  Answer  7: chekhov
+
+  Answer  8: terry jones
+
+  Answer  9: chris rucker
+
+  Answer 10: Little Jimmy Osmond
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.134921
+  SE mean after noise:      2.118353
+  SE std (across samples):  0.026978
+  Delta SE (mean - before): -0.016567
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       charles austin powers
+
+
+====================================================================================================
+SUMMARY STATISTICS
+====================================================================================================
+
+Average SE before:        2.163787
+Average SE after:         2.148960
+Average SE std:           0.024520
+Average Delta SE:         -0.014827
+Correct answers:          0/10 (0%)
+
+SE range:                 2.134921 - 2.253579
+
+====================================================================================================
+INTERPRETATION
+====================================================================================================
+
+These questions have the HIGHEST baseline semantic entropy, indicating:
+  1. Model produces DIVERSE answers across 10 generations
+  2. High epistemic uncertainty - model doesn't "know" the answer
+  3. Answer distribution is SPREAD OUT (not concentrated)
+  4. These are ideal candidates for:
+     - Human review in active learning
+     - Identifying knowledge gaps
+     - Testing model calibration
+
+NOTE: Low correctness rate confirms high SE correlates with uncertainty.
+
+====================================================================================================

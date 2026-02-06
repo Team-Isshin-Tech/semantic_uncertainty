@@ -1,0 +1,1455 @@
+========================================================================================================================
+TOP 10 MOST UNCERTAIN QUESTIONS - WITH TOKEN PROBABILITIES & SEQUENCES
+(Ranked by SE_before - Baseline Semantic Entropy)
+========================================================================================================================
+
+
+========================================================================================================================
+RANK 1: SE_before = 2.253579
+========================================================================================================================
+Question ID: bt_1031--61/61_537330.txt#0_0
+
+QUESTION:
+  What was the name of the Prime Minister in the T.V. series Yes Prime Minister
+
+GROUND TRUTH ANSWERS:
+  ✓ jim hacker
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: mandy fields
+  Overall Log-Likelihood: -4.910927
+  Probability: 0.007366
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-2.4604', '-0.1195', '-2.3310']
+  Token Log-LL Stats:
+    Mean: -1.636976
+    Min: -2.460390
+    Max: -0.119500
+    Std: 1.074316
+
+Answer  2:
+  Text: the name of the Prime Minister in Yes, Prime Minister is Maggie Beckett.
+  Overall Log-Likelihood: -17.538254
+  Probability: 0.000000
+  Token Count: 15
+  Per-Token Log-Likelihoods: ['-2.7787', '-0.3387', '-0.1251', '-0.0149', '-0.6026', '-0.0011', '-0.4940', '-2.4521', '-1.0379', '-0.0132', '-0.0010', '-0.5630', '-5.6824', '-2.9668', '-0.4667']
+  Token Log-LL Stats:
+    Mean: -1.169217
+    Min: -5.682409
+    Max: -0.001043
+    Std: 1.563547
+
+Answer  3:
+  Text: stephen macdonald
+  Overall Log-Likelihood: -7.479018
+  Probability: 0.000565
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-2.9360', '-0.0978', '-3.0177', '-1.4175', '-0.0100']
+  Token Log-LL Stats:
+    Mean: -1.495804
+    Min: -3.017710
+    Max: -0.009997
+    Std: 1.308312
+
+Answer  4:
+  Text: mandy moore
+  Overall Log-Likelihood: -5.992227
+  Probability: 0.002498
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-2.4604', '-0.1195', '-3.3935', '-0.0188']
+  Token Log-LL Stats:
+    Mean: -1.498057
+    Min: -3.393536
+    Max: -0.018801
+    Std: 1.466931
+
+Answer  5:
+  Text: Tony Blair
+  Overall Log-Likelihood: -2.883032
+  Probability: 0.055965
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-2.8676', '-0.0154']
+  Token Log-LL Stats:
+    Mean: -1.441516
+    Min: -2.867617
+    Max: -0.015416
+    Std: 1.426100
+
+Answer  6:
+  Text: David Cameron
+  Overall Log-Likelihood: -2.193932
+  Probability: 0.111478
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-1.9643', '-0.2296']
+  Token Log-LL Stats:
+    Mean: -1.096966
+    Min: -1.964296
+    Max: -0.229636
+    Std: 0.867330
+
+Answer  7:
+  Text: mike hawkins
+  Overall Log-Likelihood: -6.967852
+  Probability: 0.000942
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-4.4743', '-1.2080', '-1.2497', '-0.0359']
+  Token Log-LL Stats:
+    Mean: -1.741963
+    Min: -4.474306
+    Max: -0.035857
+    Std: 1.651056
+
+Answer  8:
+  Text: mandy rice
+  Overall Log-Likelihood: -5.246864
+  Probability: 0.005264
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-2.4604', '-0.1195', '-2.6670']
+  Token Log-LL Stats:
+    Mean: -1.748955
+    Min: -2.666974
+    Max: -0.119500
+    Std: 1.155281
+
+Answer  9:
+  Text: stephen fletcher-adams
+  Overall Log-Likelihood: -15.237024
+  Probability: 0.000000
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-2.9360', '-0.0978', '-3.8966', '-1.2533', '-3.3009', '-3.6161', '-0.1364']
+  Token Log-LL Stats:
+    Mean: -2.176718
+    Min: -3.896616
+    Max: -0.097822
+    Std: 1.521634
+
+Answer 10:
+  Text: Gordon Brown
+  Overall Log-Likelihood: -4.023459
+  Probability: 0.017891
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-3.9462', '-0.0772']
+  Token Log-LL Stats:
+    Mean: -2.011729
+    Min: -3.946230
+    Max: -0.077229
+    Std: 1.934501
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.253579
+  SE mean after noise:      1.961848
+  SE std (across samples):  0.142163
+  Delta SE (mean - before): -0.291731
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       David Cameron
+
+========================================================================================================================
+RANK 2: SE_before = 2.203490
+========================================================================================================================
+Question ID: bt_2892--150/150_2107251.txt#0_0
+
+QUESTION:
+  Who had a number one in 2011 with Grenade
+
+GROUND TRUTH ANSWERS:
+  ✓ bruno mars
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: Jay sean
+  Overall Log-Likelihood: -4.669672
+  Probability: 0.009375
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-4.3278', '-0.3419']
+  Token Log-LL Stats:
+    Mean: -2.334836
+    Min: -4.327776
+    Max: -0.341895
+    Std: 1.992941
+
+Answer  2:
+  Text: 1st Week Week ft. Rihanna
+  Overall Log-Likelihood: -21.784990
+  Probability: 0.000000
+  Token Count: 8
+  Per-Token Log-Likelihoods: ['-3.1188', '-1.6255', '-2.7435', '-3.8384', '-2.1892', '-5.2709', '-0.1055', '-2.8930']
+  Token Log-LL Stats:
+    Mean: -2.723124
+    Min: -5.270933
+    Max: -0.105544
+    Std: 1.425772
+
+Answer  3:
+  Text: zedd ft ariana grande
+  Overall Log-Likelihood: -14.632882
+  Probability: 0.000000
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-4.3434', '-0.2580', '-2.7050', '-7.2568', '-0.0538', '-0.0072', '-0.0087']
+  Token Log-LL Stats:
+    Mean: -2.090412
+    Min: -7.256840
+    Max: -0.007206
+    Std: 2.627452
+
+Answer  4:
+  Text: kylie & the cat
+  Overall Log-Likelihood: -13.701953
+  Probability: 0.000001
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-3.2106', '-1.6582', '-6.0209', '-0.9368', '-0.2088', '-1.6667']
+  Token Log-LL Stats:
+    Mean: -2.283659
+    Min: -6.020890
+    Max: -0.208793
+    Std: 1.902504
+
+Answer  5:
+  Text: G.G. Ftizzy
+  Overall Log-Likelihood: -17.592129
+  Probability: 0.000000
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-4.7770', '-1.4295', '-4.4519', '-0.0307', '-3.1287', '-1.5119', '-2.2624']
+  Token Log-LL Stats:
+    Mean: -2.513161
+    Min: -4.776995
+    Max: -0.030730
+    Std: 1.588565
+
+Answer  6:
+  Text: 2 chainz
+  Overall Log-Likelihood: -6.985963
+  Probability: 0.000925
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-3.1188', '-1.1919', '-2.6721', '-0.0032']
+  Token Log-LL Stats:
+    Mean: -1.746491
+    Min: -3.118792
+    Max: -0.003152
+    Std: 1.233564
+
+Answer  7:
+  Text: Usher
+  Overall Log-Likelihood: -3.479254
+  Probability: 0.030830
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-3.4772', '-0.0021']
+  Token Log-LL Stats:
+    Mean: -1.739627
+    Min: -3.477190
+    Max: -0.002064
+    Std: 1.737563
+
+Answer  8:
+  Text: Miley Cyrus
+  Overall Log-Likelihood: -5.008174
+  Probability: 0.006683
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-4.4860', '-0.5177', '-0.0045']
+  Token Log-LL Stats:
+    Mean: -1.669391
+    Min: -4.485980
+    Max: -0.004460
+    Std: 2.002621
+
+Answer  9:
+  Text: Sky Ferreira
+  Overall Log-Likelihood: -4.754717
+  Probability: 0.008611
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-4.3629', '-0.3628', '-0.0265', '-0.0024']
+  Token Log-LL Stats:
+    Mean: -1.188679
+    Min: -4.362933
+    Max: -0.002414
+    Std: 1.838185
+
+Answer 10:
+  Text: Justin Bieber
+  Overall Log-Likelihood: -4.206981
+  Probability: 0.014891
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-4.1305', '-0.0765']
+  Token Log-LL Stats:
+    Mean: -2.103490
+    Min: -4.130511
+    Max: -0.076470
+    Std: 2.027020
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.203490
+  SE mean after noise:      1.902276
+  SE std (across samples):  0.160822
+  Delta SE (mean - before): -0.301214
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       Rihanna
+
+========================================================================================================================
+RANK 3: SE_before = 2.170353
+========================================================================================================================
+Question ID: tc_69--158/158_2486.txt#0_1
+
+QUESTION:
+  Rita Coolidge sang the title song for which Bond film?
+
+GROUND TRUTH ANSWERS:
+  ✓ octopussy
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: You Only Live Thrice
+  Overall Log-Likelihood: -7.139835
+  Probability: 0.000793
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-2.0255', '-0.2338', '-0.0030', '-3.9179', '-0.9597']
+  Token Log-LL Stats:
+    Mean: -1.427967
+    Min: -3.917854
+    Max: -0.002965
+    Std: 1.430560
+
+Answer  2:
+  Text: 'You Know My Name'
+  Overall Log-Likelihood: -2.415797
+  Probability: 0.089296
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-1.2560', '-0.3132', '-0.3287', '-0.3856', '-0.0615', '-0.0064', '-0.0644']
+  Token Log-LL Stats:
+    Mean: -0.345114
+    Min: -1.255975
+    Max: -0.006381
+    Std: 0.397587
+
+Answer  3:
+  Text: the world is not enough
+  Overall Log-Likelihood: -6.131401
+  Probability: 0.002174
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-2.1310', '-3.9725', '-0.0086', '-0.0170', '-0.0023']
+  Token Log-LL Stats:
+    Mean: -1.226280
+    Min: -3.972549
+    Max: -0.002255
+    Std: 1.600234
+
+Answer  4:
+  Text: 2027: A View From The Sky
+  Overall Log-Likelihood: -16.817657
+  Probability: 0.000000
+  Token Count: 9
+  Per-Token Log-Likelihoods: ['-1.2560', '-8.6940', '-1.1958', '-0.0850', '-1.0859', '-1.8695', '-2.1948', '-0.2392', '-0.1975']
+  Token Log-LL Stats:
+    Mean: -1.868629
+    Min: -8.694026
+    Max: -0.085036
+    Std: 2.511355
+
+Answer  5:
+  Text: 'My Funny Valentine'
+  Overall Log-Likelihood: -10.002837
+  Probability: 0.000045
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-1.2560', '-0.3132', '-5.3951', '-2.8119', '-0.2069', '-0.0199']
+  Token Log-LL Stats:
+    Mean: -1.667139
+    Min: -5.395083
+    Max: -0.019854
+    Std: 1.917304
+
+Answer  6:
+  Text: the world is your oyster (the girl you choose)
+  Overall Log-Likelihood: -24.305821
+  Probability: 0.000000
+  Token Count: 12
+  Per-Token Log-Likelihoods: ['-2.1310', '-3.9725', '-0.0086', '-4.3686', '-0.0020', '-2.9444', '-0.0211', '-2.4523', '-4.9591', '-0.8932', '-2.2435', '-0.3093']
+  Token Log-LL Stats:
+    Mean: -2.025485
+    Min: -4.959147
+    Max: -0.002039
+    Std: 1.717061
+
+Answer  7:
+  Text: the living daylights
+  Overall Log-Likelihood: -3.249474
+  Probability: 0.038795
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-2.1310', '-1.1015', '-0.0147', '-0.0023']
+  Token Log-LL Stats:
+    Mean: -0.812368
+    Min: -2.130975
+    Max: -0.002323
+    Std: 0.882427
+
+Answer  8:
+  Text: the 1999 film "Russo and Steele"
+  Overall Log-Likelihood: -15.835795
+  Probability: 0.000000
+  Token Count: 13
+  Per-Token Log-Likelihoods: ['-2.1310', '-1.7343', '-3.1562', '-0.7877', '-0.2343', '-0.3217', '-2.6691', '-3.0723', '-0.2777', '-0.6503', '-0.5233', '-0.2321', '-0.0459']
+  Token Log-LL Stats:
+    Mean: -1.218138
+    Min: -3.156157
+    Max: -0.045911
+    Std: 1.122900
+
+Answer  9:
+  Text: the spy who love me
+  Overall Log-Likelihood: -8.536777
+  Probability: 0.000196
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-2.1310', '-1.8397', '-0.0118', '-4.4210', '-0.1333']
+  Token Log-LL Stats:
+    Mean: -1.707355
+    Min: -4.420970
+    Max: -0.011821
+    Std: 1.607063
+
+Answer 10:
+  Text: 'You're My Thunder' was featured in the 1995 film 'Tomorrow Never Dies'.
+  Overall Log-Likelihood: -25.246940
+  Probability: 0.000000
+  Token Count: 22
+  Per-Token Log-Likelihoods: ['-1.2560', '-0.3132', '-0.3287', '-1.8778', '-0.0871', '-1.2042', '-3.7835', '-0.0237', '-3.6050', '-4.5474', '-0.0371', '-0.2597', '-0.4167', '-1.2717', '-3.5222', '-0.2152', '-0.3506', '-0.0735', '-1.1970', '-0.0028', '-0.2454', '-0.6284']
+  Token Log-LL Stats:
+    Mean: -1.147588
+    Min: -4.547379
+    Max: -0.002818
+    Std: 1.383546
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.170353
+  SE mean after noise:      2.014981
+  SE std (across samples):  0.103557
+  Delta SE (mean - before): -0.155372
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       'You Know My Name' (2000)
+
+========================================================================================================================
+RANK 4: SE_before = 2.161077
+========================================================================================================================
+Question ID: sfq_668--20/20_1363097.txt#0_1
+
+QUESTION:
+  Which actress was born Demetria Gene Guynes in 1962?
+
+GROUND TRUTH ANSWERS:
+  ✓ demi moore
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: alicia silverstone
+  Overall Log-Likelihood: -5.891918
+  Probability: 0.002762
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-4.8541', '-0.7256', '-0.3080', '-0.0042']
+  Token Log-LL Stats:
+    Mean: -1.472980
+    Min: -4.854074
+    Max: -0.004154
+    Std: 1.968809
+
+Answer  2:
+  Text: kate beckinsale
+  Overall Log-Likelihood: -6.289573
+  Probability: 0.001856
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-3.1373', '-0.6121', '-2.5093', '-0.0307', '-0.0002']
+  Token Log-LL Stats:
+    Mean: -1.257915
+    Min: -3.137278
+    Max: -0.000219
+    Std: 1.311700
+
+Answer  3:
+  Text: melanie griffith
+  Overall Log-Likelihood: -4.683144
+  Probability: 0.009250
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-3.2701', '-1.3341', '-0.0769', '-0.0008', '-0.0012']
+  Token Log-LL Stats:
+    Mean: -0.936629
+    Min: -3.270090
+    Max: -0.000824
+    Std: 1.272239
+
+Answer  4:
+  Text: Demetria Georganne
+  Overall Log-Likelihood: -3.914981
+  Probability: 0.019941
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-0.7330', '-0.4568', '-0.0119', '-1.9282', '-0.7131', '-0.0721']
+  Token Log-LL Stats:
+    Mean: -0.652497
+    Min: -1.928185
+    Max: -0.011859
+    Std: 0.635501
+
+Answer  5:
+  Text: lisa bonet
+  Overall Log-Likelihood: -6.313340
+  Probability: 0.001812
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-4.0670', '-0.4634', '-1.7056', '-0.0774']
+  Token Log-LL Stats:
+    Mean: -1.578335
+    Min: -4.066965
+    Max: -0.077386
+    Std: 1.557669
+
+Answer  6:
+  Text: Demetria Michelle Johnson
+  Overall Log-Likelihood: -11.703375
+  Probability: 0.000008
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-0.7330', '-0.4568', '-0.0119', '-3.9926', '-6.5091']
+  Token Log-LL Stats:
+    Mean: -2.340675
+    Min: -6.509140
+    Max: -0.011859
+    Std: 2.516438
+
+Answer  7:
+  Text: Demi Moore
+  Overall Log-Likelihood: -2.041635
+  Probability: 0.129816
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-0.7330', '-1.3015', '-0.0072']
+  Token Log-LL Stats:
+    Mean: -0.680545
+    Min: -1.301484
+    Max: -0.007171
+    Std: 0.529701
+
+Answer  8:
+  Text: cybill shepherd
+  Overall Log-Likelihood: -5.615624
+  Probability: 0.003641
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-3.4791', '-2.0442', '-0.0924']
+  Token Log-LL Stats:
+    Mean: -1.871875
+    Min: -3.479074
+    Max: -0.092352
+    Std: 1.387983
+
+Answer  9:
+  Text: Demetria Guynes
+  Overall Log-Likelihood: -2.841436
+  Probability: 0.058342
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-0.7330', '-0.4568', '-0.0119', '-1.6391', '-0.0007']
+  Token Log-LL Stats:
+    Mean: -0.568287
+    Min: -1.639122
+    Max: -0.000717
+    Std: 0.602992
+
+Answer 10:
+  Text: madonna
+  Overall Log-Likelihood: -3.793884
+  Probability: 0.022508
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-3.7916', '-0.0023']
+  Token Log-LL Stats:
+    Mean: -1.896942
+    Min: -3.791574
+    Max: -0.002310
+    Std: 1.894632
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.161077
+  SE mean after noise:      1.990043
+  SE std (across samples):  0.119015
+  Delta SE (mean - before): -0.171033
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       Demetria Gene Guynes
+
+========================================================================================================================
+RANK 5: SE_before = 2.151473
+========================================================================================================================
+Question ID: bb_1997--80/80_876537.txt#0_1
+
+QUESTION:
+  What symbol(s) does the comic book hero Captain America have on his shield and chest?
+
+GROUND TRUTH ANSWERS:
+  ✓ star
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: The American Flag and an Eagle.
+  Overall Log-Likelihood: -12.201047
+  Probability: 0.000005
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-4.0328', '-2.8636', '-1.5005', '-0.5287', '-1.4411', '-1.4325', '-0.4018']
+  Token Log-LL Stats:
+    Mean: -1.743007
+    Min: -4.032813
+    Max: -0.401770
+    Std: 1.196351
+
+Answer  2:
+  Text: four red stripes and a circle with an A in the center.
+  Overall Log-Likelihood: -18.683376
+  Probability: 0.000000
+  Token Count: 13
+  Per-Token Log-Likelihoods: ['-6.4095', '-0.6547', '-5.1885', '-0.6382', '-0.3483', '-2.5906', '-0.4578', '-0.1701', '-0.6176', '-0.6051', '-0.0289', '-0.4122', '-0.5618']
+  Token Log-LL Stats:
+    Mean: -1.437183
+    Min: -6.409522
+    Max: -0.028875
+    Std: 1.966880
+
+Answer  3:
+  Text: an eagle and a star
+  Overall Log-Likelihood: -7.127642
+  Probability: 0.000803
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-1.8082', '-0.9393', '-0.1786', '-0.6876', '-3.5139']
+  Token Log-LL Stats:
+    Mean: -1.425528
+    Min: -3.513912
+    Max: -0.178611
+    Std: 1.169915
+
+Answer  4:
+  Text: a shield with a red, white, and blue eagle clutching a spear.
+  Overall Log-Likelihood: -9.293508
+  Probability: 0.000092
+  Token Count: 15
+  Per-Token Log-Likelihoods: ['-0.8746', '-0.3380', '-0.0690', '-1.1784', '-0.3653', '-0.0147', '-0.0031', '-0.0823', '-0.0013', '-0.0056', '-1.3355', '-3.2076', '-0.1022', '-0.3290', '-1.3867']
+  Token Log-LL Stats:
+    Mean: -0.619567
+    Min: -3.207630
+    Max: -0.001325
+    Std: 0.847331
+
+Answer  5:
+  Text: the shield has an eagle clutching an American flag and the chest has a red, white, and blue shield with an emblem that consists of Captain America's shield and his initials, A.C.
+  Overall Log-Likelihood: -34.957110
+  Probability: 0.000000
+  Token Count: 40
+  Per-Token Log-Likelihoods: ['-2.4723', '-0.5245', '-0.6704', '-1.1941', '-0.7372', '-1.7768', '-1.1893', '-0.7885', '-0.0271', '-2.3914', '-0.1834', '-0.0045', '-0.0606', '-0.3914', '-0.2854', '-0.0233', '-0.0026', '-0.0732', '-0.0009', '-0.0106', '-1.2993', '-0.1079', '-0.9265', '-1.7838', '-2.3779', '-2.8420', '-0.0003', '-2.2035', '-0.0101', '-0.0025', '-0.0002', '-1.7233', '-1.6490', '-2.3116', '-2.4794', '-0.4874', '-0.1540', '-0.0585', '-1.7133', '-0.0191']
+  Token Log-LL Stats:
+    Mean: -0.873928
+    Min: -2.842047
+    Max: -0.000243
+    Std: 0.924043
+
+Answer  6:
+  Text: a shield with a red, white, and blue design featuring a star, and the letters 'A' on his chest.
+  Overall Log-Likelihood: -17.487835
+  Probability: 0.000000
+  Token Count: 26
+  Per-Token Log-Likelihoods: ['-0.8746', '-0.3380', '-0.0690', '-1.1784', '-0.3653', '-0.0147', '-0.0031', '-0.0823', '-0.0013', '-0.0056', '-1.2652', '-2.0060', '-1.8313', '-2.1945', '-1.6314', '-0.5451', '-1.8356', '-0.5387', '-0.4679', '-0.0832', '-0.0451', '-0.0814', '-1.8426', '-0.0174', '-0.0007', '-0.1693']
+  Token Log-LL Stats:
+    Mean: -0.672609
+    Min: -2.194518
+    Max: -0.000656
+    Std: 0.752487
+
+Answer  7:
+  Text: a shield with an eagle, and a red, white, and blue star on his chest.
+  Overall Log-Likelihood: -10.651922
+  Probability: 0.000024
+  Token Count: 19
+  Per-Token Log-Likelihoods: ['-0.8746', '-0.3380', '-0.0690', '-0.4284', '-0.7928', '-2.6798', '-0.6064', '-0.6397', '-1.0778', '-0.0247', '-0.0034', '-0.0559', '-0.0011', '-0.0090', '-1.9969', '-0.6896', '-0.0245', '-0.0006', '-0.3398']
+  Token Log-LL Stats:
+    Mean: -0.560627
+    Min: -2.679781
+    Max: -0.000577
+    Std: 0.704389
+
+Answer  8:
+  Text: shield contains an A in the middle, while his chest has a circle with A within it.
+  Overall Log-Likelihood: -28.468028
+  Probability: 0.000000
+  Token Count: 19
+  Per-Token Log-Likelihoods: ['-2.3395', '-1.8832', '-1.1868', '-2.2001', '-4.1335', '-0.5287', '-1.2147', '-0.5465', '-1.0410', '-1.2908', '-0.0079', '-0.9681', '-0.4927', '-2.1254', '-0.1161', '-2.9009', '-5.0455', '-0.1910', '-0.2556']
+  Token Log-LL Stats:
+    Mean: -1.498317
+    Min: -5.045548
+    Max: -0.007939
+    Std: 1.341429
+
+Answer  9:
+  Text: AAM and STAR.
+  Overall Log-Likelihood: -13.720907
+  Probability: 0.000001
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-3.2555', '-7.1124', '-1.2046', '-1.5508', '-0.5976']
+  Token Log-LL Stats:
+    Mean: -2.744181
+    Min: -7.112414
+    Max: -0.597562
+    Std: 2.355638
+
+Answer 10:
+  Text: an american eagle
+  Overall Log-Likelihood: -5.324247
+  Probability: 0.004872
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-1.8082', '-2.8026', '-0.7135']
+  Token Log-LL Stats:
+    Mean: -1.774749
+    Min: -2.802550
+    Max: -0.713494
+    Std: 0.853182
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.151473
+  SE mean after noise:      2.026319
+  SE std (across samples):  0.080703
+  Delta SE (mean - before): -0.125154
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       a shield with an eagle and a red, white, and blue motif, and a chest symbol with a red, white, and blue motif.
+
+========================================================================================================================
+RANK 6: SE_before = 2.145951
+========================================================================================================================
+Question ID: dpql_3600--123/123_649287.txt#0_1
+
+QUESTION:
+  Which character was played by Linda Thorson in The Avengers?
+
+GROUND TRUTH ANSWERS:
+  ✓ tara king
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: miss marple
+  Overall Log-Likelihood: -3.773930
+  Probability: 0.022962
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-3.2964', '-0.3982', '-0.0793']
+  Token Log-LL Stats:
+    Mean: -1.257977
+    Min: -3.296446
+    Max: -0.079272
+    Std: 1.447285
+
+Answer  2:
+  Text: Lady Jane Grey
+  Overall Log-Likelihood: -7.426595
+  Probability: 0.000595
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-3.6441', '-2.1241', '-1.6584']
+  Token Log-LL Stats:
+    Mean: -2.475532
+    Min: -3.644103
+    Max: -1.658394
+    Std: 0.847895
+
+Answer  3:
+  Text: the character who goes by the name 'Sword Master'
+  Overall Log-Likelihood: -19.839145
+  Probability: 0.000000
+  Token Count: 13
+  Per-Token Log-Likelihoods: ['-1.5464', '-0.1281', '-5.4575', '-1.1872', '-0.0253', '-0.0042', '-0.0581', '-0.5149', '-0.1333', '-4.2882', '-3.8433', '-2.3660', '-0.2866']
+  Token Log-LL Stats:
+    Mean: -1.526088
+    Min: -5.457532
+    Max: -0.004158
+    Std: 1.807079
+
+Answer  4:
+  Text: judy arlene holtz
+  Overall Log-Likelihood: -15.506119
+  Probability: 0.000000
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-4.2027', '-0.0145', '-2.1086', '-2.5662', '-2.9277', '-3.6863']
+  Token Log-LL Stats:
+    Mean: -2.584353
+    Min: -4.202696
+    Max: -0.014516
+    Std: 1.340521
+
+Answer  5:
+  Text: the character Linda Barnes
+  Overall Log-Likelihood: -8.519609
+  Probability: 0.000200
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.5464', '-0.1281', '-2.6450', '-4.2001']
+  Token Log-LL Stats:
+    Mean: -2.129902
+    Min: -4.200060
+    Max: -0.128071
+    Std: 1.491531
+
+Answer  6:
+  Text: the character name is Lady Blackbird.
+  Overall Log-Likelihood: -11.358303
+  Probability: 0.000012
+  Token Count: 8
+  Per-Token Log-Likelihoods: ['-1.5464', '-0.1281', '-2.1568', '-0.7922', '-2.2972', '-2.8945', '-1.2629', '-0.2803']
+  Token Log-LL Stats:
+    Mean: -1.419788
+    Min: -2.894462
+    Max: -0.128071
+    Std: 0.927979
+
+Answer  7:
+  Text: the character codenamed 'Black Widow'
+  Overall Log-Likelihood: -5.713848
+  Probability: 0.003300
+  Token Count: 10
+  Per-Token Log-Likelihoods: ['-1.5464', '-0.1281', '-2.9458', '-0.0025', '-0.0006', '-0.1515', '-0.0821', '-0.5847', '-0.0043', '-0.2678']
+  Token Log-LL Stats:
+    Mean: -0.571385
+    Min: -2.945813
+    Max: -0.000632
+    Std: 0.909074
+
+Answer  8:
+  Text: the character named Emma Peel
+  Overall Log-Likelihood: -5.239606
+  Probability: 0.005302
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-1.5464', '-0.1281', '-2.8443', '-0.7208', '-0.0001']
+  Token Log-LL Stats:
+    Mean: -1.047921
+    Min: -2.844251
+    Max: -0.000057
+    Std: 1.051332
+
+Answer  9:
+  Text: the character Jane Foster
+  Overall Log-Likelihood: -6.316773
+  Probability: 0.001806
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.5464', '-0.1281', '-4.1607', '-0.4816']
+  Token Log-LL Stats:
+    Mean: -1.579193
+    Min: -4.160657
+    Max: -0.128071
+    Std: 1.579201
+
+Answer 10:
+  Text: linda thorson played the role of june davenport
+  Overall Log-Likelihood: -20.833915
+  Probability: 0.000000
+  Token Count: 14
+  Per-Token Log-Likelihoods: ['-4.0425', '-0.6185', '-0.1304', '-0.0048', '-0.0009', '-1.0597', '-0.8736', '-1.2231', '-0.0029', '-2.5987', '-5.4034', '-4.5990', '-0.2750', '-0.0013']
+  Token Log-LL Stats:
+    Mean: -1.488137
+    Min: -5.403442
+    Max: -0.000948
+    Std: 1.818497
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.145951
+  SE mean after noise:      1.945020
+  SE std (across samples):  0.125201
+  Delta SE (mean - before): -0.200931
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       the character Emma Peel.
+
+========================================================================================================================
+RANK 7: SE_before = 2.140179
+========================================================================================================================
+Question ID: sfq_10516--89/89_1704034.txt#0_0
+
+QUESTION:
+  Who won the young PFA player of the year 2011?
+
+GROUND TRUTH ANSWERS:
+  ✓ jack wilshere
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: frank de bortoli
+  Overall Log-Likelihood: -9.104660
+  Probability: 0.000111
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-4.7721', '-0.3824', '-3.2648', '-0.5770', '-0.1083']
+  Token Log-LL Stats:
+    Mean: -1.820932
+    Min: -4.772107
+    Max: -0.108328
+    Std: 1.862473
+
+Answer  2:
+  Text: leonardo messi
+  Overall Log-Likelihood: -4.073034
+  Probability: 0.017026
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-3.0070', '-0.4166', '-0.1384', '-0.5078', '-0.0033']
+  Token Log-LL Stats:
+    Mean: -0.814607
+    Min: -3.006970
+    Max: -0.003282
+    Std: 1.111260
+
+Answer  3:
+  Text: yusuf mahmmod
+  Overall Log-Likelihood: -15.002764
+  Probability: 0.000000
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-3.4171', '-3.9986', '-0.0208', '-0.9372', '-5.5799', '-1.0492']
+  Token Log-LL Stats:
+    Mean: -2.500461
+    Min: -5.579854
+    Max: -0.020818
+    Std: 1.969182
+
+Answer  4:
+  Text: jonny hernandez
+  Overall Log-Likelihood: -10.597158
+  Probability: 0.000025
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-1.8859', '-3.0280', '-0.2373', '-5.1580', '-0.0754', '-0.2126']
+  Token Log-LL Stats:
+    Mean: -1.766193
+    Min: -5.157952
+    Max: -0.075357
+    Std: 1.858337
+
+Answer  5:
+  Text: Gabriel Obertan
+  Overall Log-Likelihood: -6.244071
+  Probability: 0.001942
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-4.8620', '-1.3408', '-0.0286', '-0.0128']
+  Token Log-LL Stats:
+    Mean: -1.561018
+    Min: -4.861951
+    Max: -0.012789
+    Std: 1.980536
+
+Answer  6:
+  Text: Wayne Rooney
+  Overall Log-Likelihood: -4.739107
+  Probability: 0.008746
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-4.7370', '-0.0022']
+  Token Log-LL Stats:
+    Mean: -2.369554
+    Min: -4.736951
+    Max: -0.002157
+    Std: 2.367397
+
+Answer  7:
+  Text: theo walbeck
+  Overall Log-Likelihood: -12.033521
+  Probability: 0.000006
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-4.9186', '-0.0120', '-0.2168', '-2.5533', '-4.3328']
+  Token Log-LL Stats:
+    Mean: -2.406704
+    Min: -4.918591
+    Max: -0.012025
+    Std: 2.028366
+
+Answer  8:
+  Text: joe hart
+  Overall Log-Likelihood: -3.798125
+  Probability: 0.022413
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-3.5729', '-0.1736', '-0.0516']
+  Token Log-LL Stats:
+    Mean: -1.266042
+    Min: -3.572888
+    Max: -0.051588
+    Std: 1.631948
+
+Answer  9:
+  Text: jordan hayes
+  Overall Log-Likelihood: -8.226999
+  Probability: 0.000267
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.8859', '-1.2897', '-4.9445', '-0.1068']
+  Token Log-LL Stats:
+    Mean: -2.056750
+    Min: -4.944549
+    Max: -0.106833
+    Std: 1.785992
+
+Answer 10:
+  Text: jesse ennis
+  Overall Log-Likelihood: -9.569682
+  Probability: 0.000070
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.8859', '-2.1647', '-5.4360', '-0.0831']
+  Token Log-LL Stats:
+    Mean: -2.392421
+    Min: -5.435968
+    Max: -0.083097
+    Std: 1.930322
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.140179
+  SE mean after noise:      1.936080
+  SE std (across samples):  0.167387
+  Delta SE (mean - before): -0.204098
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       jordan henderson
+
+========================================================================================================================
+RANK 8: SE_before = 2.138628
+========================================================================================================================
+Question ID: qw_8714--28/28_287982.txt#0_0
+
+QUESTION:
+  "What kind of character is ""Touchstone"", who appears in Shakespeare's ""As You Like It""?"
+
+GROUND TRUTH ANSWERS:
+  ✓ clown
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: shakespeare's character touchstone is a character in the play who represents industry, skill, or learning.
+  Overall Log-Likelihood: -30.732799
+  Probability: 0.000000
+  Token Count: 22
+  Per-Token Log-Likelihoods: ['-6.5741', '-0.0820', '-1.0496', '-0.0008', '-0.4446', '-0.2862', '-0.0051', '-0.1736', '-0.1713', '-0.6813', '-0.7293', '-1.6421', '-0.5260', '-0.5228', '-1.5824', '-5.0776', '-1.0108', '-3.5427', '-0.0433', '-3.0440', '-3.0119', '-0.5313']
+  Token Log-LL Stats:
+    Mean: -1.396945
+    Min: -6.574123
+    Max: -0.000766
+    Std: 1.738044
+
+Answer  2:
+  Text: a philosopher.
+  Overall Log-Likelihood: -7.097515
+  Probability: 0.000827
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-0.8036', '-3.8333', '-2.4606']
+  Token Log-LL Stats:
+    Mean: -2.365838
+    Min: -3.833296
+    Max: -0.803615
+    Std: 1.238676
+
+Answer  3:
+  Text: a comedic character who plays the role of a fool
+  Overall Log-Likelihood: -11.095531
+  Probability: 0.000015
+  Token Count: 10
+  Per-Token Log-Likelihoods: ['-0.8036', '-3.7435', '-0.6588', '-0.8762', '-3.6004', '-0.4178', '-0.2354', '-0.0023', '-0.0561', '-0.7015']
+  Token Log-LL Stats:
+    Mean: -1.109553
+    Min: -3.743452
+    Max: -0.002268
+    Std: 1.312934
+
+Answer  4:
+  Text: Touchstone is a character that appears in Shakespeare's pastoral play As You Like It who is characterized as a ""quip and jesting kind of man"".
+  Overall Log-Likelihood: -45.815075
+  Probability: 0.000000
+  Token Count: 34
+  Per-Token Log-Likelihoods: ['-2.0673', '-0.0037', '-0.0219', '-0.0488', '-0.1824', '-3.5108', '-2.3810', '-0.1400', '-0.2800', '-0.0036', '-0.0001', '-7.6702', '-1.5554', '-1.9863', '-0.0003', '-0.0012', '-0.0013', '-2.0326', '-0.4709', '-2.7818', '-0.4146', '-0.2956', '-2.5082', '-0.7229', '-4.0873', '-0.4704', '-4.2709', '-1.8558', '-0.1595', '-4.4100', '-0.0654', '-0.4740', '-0.6460', '-0.2949']
+  Token Log-LL Stats:
+    Mean: -1.347502
+    Min: -7.670177
+    Max: -0.000121
+    Std: 1.747659
+
+Answer  5:
+  Text: Touchstone is a character in Shakespeare's ""As You Like It"" who is portrayed as a foolish and gullible person.
+  Overall Log-Likelihood: -18.156211
+  Probability: 0.000000
+  Token Count: 27
+  Per-Token Log-Likelihoods: ['-2.0673', '-0.0037', '-0.0219', '-0.0488', '-0.1824', '-0.5264', '-0.3023', '-0.0040', '-0.0001', '-0.6059', '-0.1329', '-0.0057', '-0.0003', '-0.0011', '-0.0017', '-0.0508', '-0.1146', '-0.1445', '-3.5912', '-0.0005', '-0.0854', '-4.8061', '-1.4659', '-2.3806', '-0.0066', '-1.3431', '-0.2627']
+  Token Log-LL Stats:
+    Mean: -0.672452
+    Min: -4.806056
+    Max: -0.000102
+    Std: 1.195385
+
+Answer  6:
+  Text: a witty, witty rogue.
+  Overall Log-Likelihood: -12.950371
+  Probability: 0.000002
+  Token Count: 6
+  Per-Token Log-Likelihoods: ['-0.8036', '-2.2786', '-0.6540', '-6.1861', '-1.8600', '-1.1680']
+  Token Log-LL Stats:
+    Mean: -2.158395
+    Min: -6.186125
+    Max: -0.654010
+    Std: 1.888807
+
+Answer  7:
+  Text: a comedic foil character
+  Overall Log-Likelihood: -7.414706
+  Probability: 0.000602
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-0.8036', '-3.7435', '-1.3385', '-1.5292']
+  Token Log-LL Stats:
+    Mean: -1.853677
+    Min: -3.743452
+    Max: -0.803615
+    Std: 1.123011
+
+Answer  8:
+  Text: comedic relief
+  Overall Log-Likelihood: -5.898142
+  Probability: 0.002745
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-3.9931', '-1.9051']
+  Token Log-LL Stats:
+    Mean: -2.949071
+    Min: -3.993068
+    Max: -1.905073
+    Std: 1.043997
+
+Answer  9:
+  Text: touchstone
+  Overall Log-Likelihood: -1.853424
+  Probability: 0.156700
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-1.8466', '-0.0068']
+  Token Log-LL Stats:
+    Mean: -0.926712
+    Min: -1.846584
+    Max: -0.006840
+    Std: 0.919872
+
+Answer 10:
+  Text: A melancholic, wise, and witty character who uses the philosophical metaphor of 'touches' to convey various ideas related to self-reflection and introspection.
+  Overall Log-Likelihood: -48.411395
+  Probability: 0.000000
+  Token Count: 35
+  Per-Token Log-Likelihoods: ['-2.6747', '-4.2656', '-0.0007', '-1.8511', '-1.8320', '-0.6925', '-0.2170', '-0.8896', '-0.0274', '-1.1796', '-2.7519', '-1.6567', '-2.9455', '-1.7877', '-0.4359', '-0.3187', '-2.2238', '-3.6169', '-0.1560', '-1.6389', '-0.2054', '-0.0733', '-2.3428', '-2.8888', '-1.0503', '-3.8968', '-0.0002', '-2.6699', '-0.0098', '-1.4491', '-0.0012', '-0.3278', '-2.2474', '-0.0020', '-0.0842']
+  Token Log-LL Stats:
+    Mean: -1.383183
+    Min: -4.265635
+    Max: -0.000224
+    Std: 1.261104
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.138628
+  SE mean after noise:      1.913636
+  SE std (across samples):  0.129286
+  Delta SE (mean - before): -0.224991
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       a character who is a source of wisdom and guidance.
+
+========================================================================================================================
+RANK 9: SE_before = 2.138220
+========================================================================================================================
+Question ID: qb_637--10/10_282457.txt#0_0
+
+QUESTION:
+  Which famous jewellers makes the Super Bowl Trophy?
+
+GROUND TRUTH ANSWERS:
+  ✓ tiffany and co
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: bvlgari
+  Overall Log-Likelihood: -4.529153
+  Probability: 0.010790
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-2.4737', '-2.0370', '-0.0183', '-0.0002']
+  Token Log-LL Stats:
+    Mean: -1.132288
+    Min: -2.473747
+    Max: -0.000159
+    Std: 1.133661
+
+Answer  2:
+  Text: Frédéric Cavaillès
+  Overall Log-Likelihood: -14.356642
+  Probability: 0.000001
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-4.6886', '-1.0638', '-0.5333', '-0.7286', '-6.0178', '-0.2798', '-1.0446']
+  Token Log-LL Stats:
+    Mean: -2.050949
+    Min: -6.017842
+    Max: -0.279831
+    Std: 2.133714
+
+Answer  3:
+  Text: rogers
+  Overall Log-Likelihood: -2.733500
+  Probability: 0.064991
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-1.3917', '-1.3418']
+  Token Log-LL Stats:
+    Mean: -1.366750
+    Min: -1.391716
+    Max: -1.341783
+    Std: 0.024966
+
+Answer  4:
+  Text: jostens
+  Overall Log-Likelihood: -2.713823
+  Probability: 0.066283
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-2.6378', '-0.0573', '-0.0187']
+  Token Log-LL Stats:
+    Mean: -0.904608
+    Min: -2.637810
+    Max: -0.018710
+    Std: 1.225660
+
+Answer  5:
+  Text: sebring
+  Overall Log-Likelihood: -7.573233
+  Probability: 0.000514
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-5.1339', '-2.4393']
+  Token Log-LL Stats:
+    Mean: -3.786616
+    Min: -5.133904
+    Max: -2.439329
+    Std: 1.347287
+
+Answer  6:
+  Text: the rogers family of new england
+  Overall Log-Likelihood: -16.041146
+  Probability: 0.000000
+  Token Count: 8
+  Per-Token Log-Likelihoods: ['-2.6808', '-3.7427', '-2.0336', '-0.9323', '-2.8563', '-1.7099', '-2.0847', '-0.0008']
+  Token Log-LL Stats:
+    Mean: -2.005143
+    Min: -3.742741
+    Max: -0.000837
+    Std: 1.087590
+
+Answer  7:
+  Text: new york
+  Overall Log-Likelihood: -3.742396
+  Probability: 0.023697
+  Token Count: 2
+  Per-Token Log-Likelihoods: ['-3.2902', '-0.4522']
+  Token Log-LL Stats:
+    Mean: -1.871198
+    Min: -3.290154
+    Max: -0.452243
+    Std: 1.418956
+
+Answer  8:
+  Text: roger taylor
+  Overall Log-Likelihood: -8.406468
+  Probability: 0.000223
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.3917', '-3.1445', '-2.7611', '-1.1091']
+  Token Log-LL Stats:
+    Mean: -2.101617
+    Min: -3.144518
+    Max: -1.109143
+    Std: 0.867685
+
+Answer  9:
+  Text: the roman numeral society of the united states
+  Overall Log-Likelihood: -17.018503
+  Probability: 0.000000
+  Token Count: 9
+  Per-Token Log-Likelihoods: ['-2.6808', '-4.0943', '-0.3952', '-0.0074', '-5.4415', '-1.0773', '-2.7751', '-0.5387', '-0.0082']
+  Token Log-LL Stats:
+    Mean: -1.890945
+    Min: -5.441494
+    Max: -0.007352
+    Std: 1.846533
+
+Answer 10:
+  Text: robert greenberg
+  Overall Log-Likelihood: -7.518319
+  Probability: 0.000543
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.3917', '-1.2754', '-4.5880', '-0.2633']
+  Token Log-LL Stats:
+    Mean: -1.879580
+    Min: -4.587963
+    Max: -0.263263
+    Std: 1.624107
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.138220
+  SE mean after noise:      1.790897
+  SE std (across samples):  0.181290
+  Delta SE (mean - before): -0.347323
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       rogers
+
+========================================================================================================================
+RANK 10: SE_before = 2.134921
+========================================================================================================================
+Question ID: sfq_8322--184/184_1656059.txt#0_0
+
+QUESTION:
+  What was the stage name of the British comedian Chaim Reuben Weintrop?
+
+GROUND TRUTH ANSWERS:
+  ✓ bud flanagan
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+10 GENERATED ANSWERS (with token log-likelihoods)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Answer  1:
+  Text: sir charles eck parry.
+  Overall Log-Likelihood: -23.336003
+  Probability: 0.000000
+  Token Count: 8
+  Per-Token Log-Likelihoods: ['-5.1350', '-2.7122', '-0.0264', '-5.2330', '-0.5986', '-5.8248', '-0.6569', '-3.1490']
+  Token Log-LL Stats:
+    Mean: -2.917000
+    Min: -5.824829
+    Max: -0.026427
+    Std: 2.170064
+
+Answer  2:
+  Text: Chaim Witz
+  Overall Log-Likelihood: -7.557832
+  Probability: 0.000522
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-3.1155', '-0.0858', '-4.1782', '-0.1783']
+  Token Log-LL Stats:
+    Mean: -1.889458
+    Min: -4.178192
+    Max: -0.085832
+    Std: 1.797397
+
+Answer  3:
+  Text: charles-henry wilkinson
+  Overall Log-Likelihood: -19.286943
+  Probability: 0.000000
+  Token Count: 7
+  Per-Token Log-Likelihoods: ['-1.5549', '-0.0270', '-4.1253', '-4.3008', '-0.2540', '-6.6253', '-2.3996']
+  Token Log-LL Stats:
+    Mean: -2.755278
+    Min: -6.625268
+    Max: -0.026975
+    Std: 2.220347
+
+Answer  4:
+  Text: charles anderson
+  Overall Log-Likelihood: -5.767792
+  Probability: 0.003127
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-1.5549', '-0.0270', '-3.9886', '-0.1973']
+  Token Log-LL Stats:
+    Mean: -1.441948
+    Min: -3.988610
+    Max: -0.026975
+    Std: 1.585059
+
+Answer  5:
+  Text: jim cugnot (also known as jim cugnot, or jimmi, or charlie cugnot)
+  Overall Log-Likelihood: -50.545498
+  Probability: 0.000000
+  Token Count: 26
+  Per-Token Log-Likelihoods: ['-2.9475', '-5.3040', '-4.4171', '-1.3999', '-5.7974', '-0.1193', '-2.0689', '-0.2666', '-0.0369', '-1.0478', '-1.3258', '-0.0684', '-0.0276', '-2.9989', '-4.2863', '-1.9653', '-2.0382', '-2.2844', '-3.8725', '-1.5770', '-4.8262', '-0.4068', '-1.0339', '-0.0606', '-0.0325', '-0.3357']
+  Token Log-LL Stats:
+    Mean: -1.944058
+    Min: -5.797438
+    Max: -0.027603
+    Std: 1.793074
+
+Answer  6:
+  Text: mark hammill
+  Overall Log-Likelihood: -7.301370
+  Probability: 0.000675
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-4.2073', '-2.9908', '-0.1032']
+  Token Log-LL Stats:
+    Mean: -2.433790
+    Min: -4.207290
+    Max: -0.103246
+    Std: 1.721146
+
+Answer  7:
+  Text: chekhov
+  Overall Log-Likelihood: -8.206814
+  Probability: 0.000273
+  Token Count: 3
+  Per-Token Log-Likelihoods: ['-5.1409', '-3.0636', '-0.0023']
+  Token Log-LL Stats:
+    Mean: -2.735605
+    Min: -5.140883
+    Max: -0.002327
+    Std: 2.110589
+
+Answer  8:
+  Text: terry jones
+  Overall Log-Likelihood: -5.945294
+  Probability: 0.002618
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-5.0745', '-0.0249', '-0.6098', '-0.2362']
+  Token Log-LL Stats:
+    Mean: -1.486323
+    Min: -5.074477
+    Max: -0.024850
+    Std: 2.082183
+
+Answer  9:
+  Text: chris rucker
+  Overall Log-Likelihood: -14.234593
+  Probability: 0.000001
+  Token Count: 4
+  Per-Token Log-Likelihoods: ['-2.4456', '-1.0408', '-3.5835', '-7.1647']
+  Token Log-LL Stats:
+    Mean: -3.558648
+    Min: -7.164680
+    Max: -1.040796
+    Std: 2.268403
+
+Answer 10:
+  Text: Little Jimmy Osmond
+  Overall Log-Likelihood: -8.828386
+  Probability: 0.000147
+  Token Count: 5
+  Per-Token Log-Likelihoods: ['-5.3528', '-3.3454', '-0.0529', '-0.0506', '-0.0266']
+  Token Log-LL Stats:
+    Mean: -1.765677
+    Min: -5.352798
+    Max: -0.026635
+    Std: 2.202826
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SEMANTIC ENTROPY METRICS:
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SE before noise:          2.134921
+  SE mean after noise:      1.911168
+  SE std (across samples):  0.145917
+  Delta SE (mean - before): -0.223752
+  Model correctness:        ✗ INCORRECT
+  Most likely answer:       charles austin powers
