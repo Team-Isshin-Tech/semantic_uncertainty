@@ -262,6 +262,59 @@ This process is repeated $S$ times (e.g., $S = 100$) to generate $S$ samples of 
 
 \textbf{Assumption:} Noise is applied independently to each token in each answer. Aggregate noise mean is computed as $\bar{\epsilon} = \frac{1}{N \cdot T} \sum_{i=1}^{N} \sum_{t=1}^{T_i} \epsilon_{i,t}$.
 
+\subsection{Propagation of $\mu$ and $\sigma$ to Semantic Entropy}
+
+This subsection makes explicit how the Gaussian parameters $(\mu, \sigma)$ propagate from logit perturbations to the final semantic entropy. The derivation uses the same token indices and fixed semantic clusters defined earlier.
+
+\paragraph{Step 1: Logit perturbation}
+For each decoding step $t$ of answer $a_i$, additive noise is applied to the full-vocabulary logits:
+\begin{equation}
+\boldsymbol{z}_{i,t}^{(\text{noisy})} = \boldsymbol{z}_{i,t} + \boldsymbol{\epsilon}_{i,t},
+\quad \boldsymbol{\epsilon}_{i,t} \sim \mathcal{N}(\mu, \sigma^2 I).
+\label{eq:noisy_logits}
+\end{equation}
+
+\paragraph{Step 2: Noisy token log-probabilities}
+For the generated token $a_{i,t}$, the noisy log-probability is
+\begin{equation}
+\ell_{i,t}^{(\text{noisy})} = z_{i,t,a_{i,t}} + \epsilon_{i,t,a_{i,t}} - \log \sum_{v \in \mathcal{V}} \exp\big(z_{i,t,v} + \epsilon_{i,t,v}\big).
+\label{eq:noisy_logprob_explicit}
+\end{equation}
+
+To make the dependence on $(\mu,\sigma)$ explicit, write
+\begin{equation}
+\epsilon_{i,t,v} = \mu + \sigma \cdot \xi_{i,t,v}, \quad \xi_{i,t,v} \sim \mathcal{N}(0,1).
+\label{eq:noise_reparam}
+\end{equation}
+Substituting into Eq.~\eqref{eq:noisy_logprob_explicit} yields
+\begin{equation}
+\ell_{i,t}^{(\text{noisy})} = \ell_{i,t} + \sigma \cdot \xi_{i,t,a_{i,t}} - \log \sum_{v \in \mathcal{V}} \exp\big(\sigma \cdot \xi_{i,t,v}\big).
+\label{eq:noisy_logprob_reparam}
+\end{equation}
+The global shift by $\mu$ cancels inside the log-softmax, so $\mu$ does not change the normalized token distribution. The remaining influence is governed by $\sigma$.
+
+\paragraph{Step 3: Noisy sequence log-likelihood}
+\begin{equation}
+\bar{\ell}_i^{(\text{noisy})} = \frac{1}{T_i} \sum_{t=1}^{T_i} \ell_{i,t}^{(\text{noisy})}.
+\label{eq:noisy_seq_logprob_explicit}
+\end{equation}
+
+\paragraph{Step 4: Noisy cluster log-probabilities}
+Let $\tilde{\ell}_i^{(\text{noisy})}$ denote the globally normalized per-answer log-probabilities. Then the noisy cluster log-probabilities are
+\begin{equation}
+\mathcal{P}_k^{(\text{noisy})} = \log \sum_{i : c_i = k} \exp\big(\tilde{\ell}_i^{(\text{noisy})}\big).
+\label{eq:noisy_cluster_logprob}
+\end{equation}
+
+\paragraph{Step 5: Noisy semantic entropy}
+The final entropy under perturbation is
+\begin{equation}
+H_{\text{SE}}^{(\text{noisy})}(\sigma) = -\sum_{k=1}^{K} \exp\big(\mathcal{P}_k^{(\text{noisy})}\big) \, \mathcal{P}_k^{(\text{noisy})}.
+\label{eq:se_noisy_sigma}
+\end{equation}
+
+\textbf{Key implication:} Because of the softmax normalization, additive mean shifts in logits cancel, so $\mu$ does not alter normalized probabilities. The variance parameter $\sigma$ drives the stochastic spread in $H_{\text{SE}}^{(\text{noisy})}$ through the log-sum-exp terms in Eqs.~\eqref{eq:noisy_logprob_reparam}--\eqref{eq:se_noisy_sigma}.
+
 \subsection{Change in Semantic Entropy under Perturbation}
 
 \begin{equation}
@@ -335,5 +388,28 @@ The complete pipeline is summarized as:
 }
 \label{eq:information_flow}
 \end{equation}
+
+\subsection{Baseline vs. Noisy Equations (Summary Table)}
+
+Table~\ref{tab:baseline_vs_noisy} summarizes the full computation chain with and without logit-space noise. This makes the point of divergence explicit and shows how the perturbation propagates to the final semantic entropy value.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{p{0.18\textwidth} p{0.38\textwidth} p{0.38\textwidth}}
+\toprule
+\textbf{Step} & \textbf{Baseline (No Noise)} & \textbf{With Gaussian Noise $\epsilon \sim \mathcal{N}(\mu,\sigma^2)$} \\
+\midrule
+Logits & $\boldsymbol{z}_{i,t}$ & $\boldsymbol{z}_{i,t}^{(\text{noisy})} = \boldsymbol{z}_{i,t} + \boldsymbol{\epsilon}_{i,t}$ \\
+Token log-prob & $\ell_{i,t} = z_{i,t,a_{i,t}} - \log \sum_{v \in \mathcal{V}} e^{z_{i,t,v}}$ & $\ell_{i,t}^{(\text{noisy})} = z_{i,t,a_{i,t}} + \epsilon_{i,t,a_{i,t}} - \log \sum_{v \in \mathcal{V}} e^{z_{i,t,v}+\epsilon_{i,t,v}}$ \\
+Seq. mean log-prob & $\bar{\ell}_i = \frac{1}{T_i} \sum_{t=1}^{T_i} \ell_{i,t}$ & $\bar{\ell}_i^{(\text{noisy})} = \frac{1}{T_i} \sum_{t=1}^{T_i} \ell_{i,t}^{(\text{noisy})}$ \\
+Normalized log-prob & $\tilde{\ell}_i = \bar{\ell}_i - \log \sum_{j=1}^{N} e^{\bar{\ell}_j}$ & $\tilde{\ell}_i^{(\text{noisy})} = \bar{\ell}_i^{(\text{noisy})} - \log \sum_{j=1}^{N} e^{\bar{\ell}_j^{(\text{noisy})}}$ \\
+Cluster log-prob & $\mathcal{P}_k = \log \sum_{i: c_i = k} e^{\tilde{\ell}_i}$ & $\mathcal{P}_k^{(\text{noisy})} = \log \sum_{i: c_i = k} e^{\tilde{\ell}_i^{(\text{noisy})}}$ \\
+Semantic entropy & $H_{\text{SE}} = -\sum_{k=1}^{K} e^{\mathcal{P}_k} \, \mathcal{P}_k$ & $H_{\text{SE}}^{(\text{noisy})} = -\sum_{k=1}^{K} e^{\mathcal{P}_k^{(\text{noisy})}} \, \mathcal{P}_k^{(\text{noisy})}$ \\
+\bottomrule
+\end{tabular}
+\caption{Side-by-side comparison of baseline equations versus the logit-perturbed (noisy) equations.}
+\label{tab:baseline_vs_noisy}
+\end{table}
 
 \end{document}
