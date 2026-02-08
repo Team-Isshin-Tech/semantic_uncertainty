@@ -1,18 +1,22 @@
 import os
-import sys
+import logging
+import threading
+import uuid
+from concurrent.futures import ThreadPoolExecutor
 from collections import Counter
-from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-ROOT = Path(__file__).resolve().parents[2]
-SEMANTIC_ROOT = ROOT / "semantic_uncertainty"
-if str(SEMANTIC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SEMANTIC_ROOT))
+DEFAULT_HF_HOME = os.getenv("SE_HF_HOME", r"C:\New Volume D\hf-cache")
+if DEFAULT_HF_HOME:
+    os.makedirs(DEFAULT_HF_HOME, exist_ok=True)
+    os.environ.setdefault("HF_HOME", DEFAULT_HF_HOME)
+    os.environ.setdefault("TRANSFORMERS_CACHE", os.path.join(DEFAULT_HF_HOME, "transformers"))
+    os.environ.setdefault("HUGGINGFACE_HUB_CACHE", os.path.join(DEFAULT_HF_HOME, "hub"))
 
 from uncertainty.models.huggingface_models import HuggingfaceModel
 from uncertainty.uncertainty_measures.semantic_entropy import (
@@ -26,7 +30,7 @@ from uncertainty.utils import utils
 
 MODEL_CONFIG = {
     "mistral-7b": {"hf_name": "Mistral-7B-Instruct-v0.1", "t": 1.2, "d": 0.2},
-    "falcon-1b": {"hf_name": "falcon-1b", "t": 0.8, "d": 0.15},
+    "falcon-1b": {"hf_name": "falcon-rw-1b", "t": 0.8, "d": 0.15},
     "falcon-7b": {"hf_name": "falcon-7b-instruct", "t": 1.5, "d": 0.3},
     "falcon-13b": {"hf_name": "falcon-13b-instruct", "t": 1.8, "d": 0.25},
     "llama-7b": {"hf_name": "Llama-2-7b-chat", "t": 1.4, "d": 0.2},
@@ -68,26 +72,45 @@ class AnalyzeResponse(BaseModel):
     clusters: List[ClusterResponse]
 
 
+class AnalyzeAsyncResponse(BaseModel):
+    jobId: str
+    status: str
+
+
+class AnalyzeStatusResponse(BaseModel):
+    jobId: str
+    status: str
+    result: Optional[AnalyzeResponse] = None
+    error: Optional[str] = None
+
+
 _MODEL_CACHE = {}
 _ENTAILMENT_MODEL = None
+_JOBS: Dict[str, AnalyzeStatusResponse] = {}
+_JOBS_LOCK = threading.Lock()
+_EXECUTOR = ThreadPoolExecutor(max_workers=1)
 
 
 def get_model(model_id: str, max_new_tokens: int):
     model_name = MODEL_CONFIG[model_id]["hf_name"]
     cache_key = f"{model_name}:{max_new_tokens}"
     if cache_key not in _MODEL_CACHE:
+        logging.info("Loading model: %s (max_new_tokens=%d)", model_name, max_new_tokens)
         _MODEL_CACHE[cache_key] = HuggingfaceModel(
             model_name=model_name,
             stop_sequences="default",
             max_new_tokens=max_new_tokens
         )
+        logging.info("Model ready: %s", model_name)
     return _MODEL_CACHE[cache_key]
 
 
 def get_entailment_model():
     global _ENTAILMENT_MODEL
     if _ENTAILMENT_MODEL is None:
+        logging.info("Loading entailment model...")
         _ENTAILMENT_MODEL = EntailmentDeberta()
+        logging.info("Entailment model ready")
     return _ENTAILMENT_MODEL
 
 
@@ -120,8 +143,7 @@ def build_clusters(responses: List[str], semantic_ids: List[int]) -> List[Cluste
     return clusters
 
 
-@app.post("/analyze", response_model=AnalyzeResponse)
-def analyze(req: AnalyzeRequest):
+def _run_analyze(req: AnalyzeRequest) -> AnalyzeResponse:
     if req.modelId not in MODEL_CONFIG:
         raise HTTPException(status_code=400, detail="Unknown modelId")
 
@@ -135,10 +157,12 @@ def analyze(req: AnalyzeRequest):
     responses = []
     log_liks = []
 
+    logging.info("Generating %d answers...", req.sampleSize)
     for _ in range(req.sampleSize):
         answer, token_log_likelihoods, _ = model.predict(prompt, temperature=temperature)
         responses.append(answer)
         log_liks.append(token_log_likelihoods)
+    logging.info("Finished generation")
 
     if not responses:
         raise HTTPException(status_code=500, detail="No responses generated")
@@ -166,3 +190,60 @@ def analyze(req: AnalyzeRequest):
         sampleSize=req.sampleSize,
         clusters=clusters
     )
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
+def analyze(req: AnalyzeRequest):
+    return _run_analyze(req)
+
+
+@app.post("/analyze_async", response_model=AnalyzeAsyncResponse)
+def analyze_async(req: AnalyzeRequest):
+    job_id = uuid.uuid4().hex
+    job = AnalyzeStatusResponse(jobId=job_id, status="queued")
+    with _JOBS_LOCK:
+        _JOBS[job_id] = job
+
+    def _job_runner():
+        with _JOBS_LOCK:
+            _JOBS[job_id].status = "running"
+        try:
+            result = _run_analyze(req)
+            with _JOBS_LOCK:
+                _JOBS[job_id].status = "done"
+                _JOBS[job_id].result = result
+        except Exception as exc:
+            logging.exception("Async analyze failed: %s", exc)
+            with _JOBS_LOCK:
+                _JOBS[job_id].status = "error"
+                _JOBS[job_id].error = str(exc)
+
+    _EXECUTOR.submit(_job_runner)
+    return AnalyzeAsyncResponse(jobId=job_id, status="queued")
+
+
+@app.get("/analyze_status/{job_id}", response_model=AnalyzeStatusResponse)
+def analyze_status(job_id: str):
+    with _JOBS_LOCK:
+        job = _JOBS.get(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Unknown jobId")
+        return job
+
+
+@app.on_event("startup")
+def preload_models():
+    if os.getenv("SE_DISABLE_PREWARM", "").strip().lower() in {"1", "true", "yes"}:
+        logging.info("Prewarm disabled via SE_DISABLE_PREWARM")
+        return
+    max_new_tokens = int(os.getenv("SE_MAX_NEW_TOKENS", "50"))
+    model_id = os.getenv("SE_WARM_MODEL", "falcon-1b")
+    try:
+        if model_id in MODEL_CONFIG:
+            logging.info("Prewarming model: %s", model_id)
+            get_model(model_id, max_new_tokens=max_new_tokens)
+        logging.info("Prewarming entailment model")
+        get_entailment_model()
+        logging.info("Prewarm complete")
+    except Exception as exc:
+        logging.exception("Prewarm failed: %s", exc)
