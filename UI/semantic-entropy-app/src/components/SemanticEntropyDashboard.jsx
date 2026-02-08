@@ -21,8 +21,8 @@ const API_URL = 'http://127.0.0.1:8001/analyze';
 
 const MODELS = [
   { id: 'mistral-7b', name: 'Mistral Instruct (7B)', enabled: false, t: 1.2, d: 0.2 },
-  { id: 'falcon-1b', name: 'Falcon Instruct (1B)', enabled: false, t: 0.8, d: 0.15 },
-  { id: 'falcon-7b', name: 'Falcon Instruct (7B)', enabled: true, t: 1.5, d: 0.3 },
+  { id: 'falcon-1b', name: 'Falcon Instruct (1B)', enabled: true, t: 0.8, d: 0.15 },
+  { id: 'falcon-7b', name: 'Falcon Instruct (7B)', enabled: false, t: 1.5, d: 0.3 },
   { id: 'falcon-13b', name: 'Falcon Instruct (13B)', enabled: false, t: 1.8, d: 0.25 },
   { id: 'llama-7b', name: 'LLaMA 2 Chat (7B)', enabled: false, t: 1.4, d: 0.2 },
   { id: 'llama-13b', name: 'LLaMA 2 Chat (13B)', enabled: false, t: 1.6, d: 0.2 }
@@ -30,7 +30,7 @@ const MODELS = [
 
 const fetchAnalysis = async ({ question, modelId, sampleSize }) => {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 600000);
 
   try {
     const response = await fetch(API_URL, {
@@ -52,7 +52,7 @@ const fetchAnalysis = async ({ question, modelId, sampleSize }) => {
 };
 
 const SemanticEntropyDashboard = () => {
-  const [selectedModelId, setSelectedModelId] = useState('falcon-7b');
+  const [selectedModelId, setSelectedModelId] = useState('falcon-1b');
   const [question, setQuestion] = useState('');
   const [sampleSize, setSampleSize] = useState(10);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
