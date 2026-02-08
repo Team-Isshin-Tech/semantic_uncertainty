@@ -1,4 +1,4 @@
-figures/
+﻿figures/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -157,6 +157,7 @@ dmypy.json
 results/validation_generations.pkl
 UI/semantic-entropy-app/node_modules/
 results/validation_generations.pkl
+
 
 
 
