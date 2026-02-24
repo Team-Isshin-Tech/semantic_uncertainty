@@ -1,0 +1,49 @@
+AUROC and AURAC (area_under_thresholded_accuracy) are defined and wired in code as follows:
+
+AUROC implementation
+- AUROC is computed from `y_true` and `y_score` using `roc_curve` then `auc` in [semantic_uncertainty/uncertainty/utils/eval_utils.py](semantic_uncertainty/uncertainty/utils/eval_utils.py#L23-L26).
+- The AUROC inputs in the main pipeline are set in [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L114-L141):
+  - `y_true` is `validation_is_false` (label 1 = incorrect).
+  - `y_score` is the uncertainty measure values (e.g., semantic entropy).
+- `validation_is_false` is computed as `1.0 - validation_is_true` in [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- `validation_is_true` comes from the low-temperature most-likely answer accuracy in [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L136-L147), which is set during generation in [semantic_uncertainty/generate_answers.py](semantic_uncertainty/generate_answers.py#L292-L334).
+
+AURAC (area_under_thresholded_accuracy) implementation
+- The code does not use the name "AURAC" directly; it uses `area_under_thresholded_accuracy` and computes it by averaging accuracy over uncertainty quantiles and summing the area in [semantic_uncertainty/uncertainty/utils/eval_utils.py](semantic_uncertainty/uncertainty/utils/eval_utils.py#L29-L40).
+- It is wired alongside AUROC in [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L65-L141).
+
+Question 1: In AUROC computation, how are cases handled where answers are incorrect but consistent?
+- There is no special handling for "consistent" incorrect answers in AUROC. Any incorrect answer is labeled `validation_is_false = 1` based on the low-temperature most-likely answer accuracy, and fed into AUROC exactly the same way as any other incorrect case [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L136-L147) and [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- AUROC only sees `validation_is_false` and the uncertainty scores; it does not see a "consistency" flag anywhere in the AUROC path [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L114-L141).
+
+Question 2: What is the intuition behind sorting SE values and comparing them against correctness labels?
+- The only explicit sorting-based AUROC calculation in this codebase is the rank-statistic implementation in [analysis/tmp_check_auroc.py](analysis/tmp_check_auroc.py#L56-L79). It sorts `(y_score, y_true)` pairs by the score, assigns average ranks for ties, and computes AUC from the rank sum of positive labels. This is equivalent to measuring how often higher uncertainty scores align with the positive class (label 1) without picking a single threshold.
+
+Question 3: Why are the low-temperature answers checked with the ground-truth reference during the calculation of AUROC?
+- The low-temperature (first) generation is explicitly used to compute accuracy against the reference answers (`metric(predicted_answer, example, model)`), and stored as `most_likely_answer['accuracy']` [semantic_uncertainty/generate_answers.py](semantic_uncertainty/generate_answers.py#L292-L334).
+- That accuracy becomes `validation_is_true`, which then becomes `validation_is_false` for AUROC labels [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L136-L147) and [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- Therefore, AUROC is computed against the correctness of the low-temperature most-likely answer, not against the high-temperature samples [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L114-L141).
+
+Question 4: How does AUROC behave under different scenarios?
+The AUROC code path only uses:
+- A label derived from low-temperature correctness (`validation_is_false`).
+- A score derived from the uncertainty measure values computed from the high-temperature responses (e.g., semantic entropy from `responses`) [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L108-L189).
+It does not check correctness or consistency of the high-temperature answers directly.
+
+Given that, for each scenario, AUROC behavior is determined solely by the ordering of uncertainty scores relative to the low-temperature label:
+
+a. Low-temperature answer is correct, and high-temperature answers are consistently correct
+- Label: `validation_is_false = 0` (correct) [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- AUROC contribution depends only on where this example’s uncertainty score ranks versus incorrect examples. The code does not use high-temperature correctness explicitly, so any effect is only through the uncertainty value itself [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L138-L141).
+
+b. Low-temperature answer is incorrect, and high-temperature answers are consistently correct
+- Label: `validation_is_false = 1` (incorrect) [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- AUROC contribution depends only on where this example’s uncertainty score ranks versus correct examples. The code does not use high-temperature correctness explicitly [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L138-L141).
+
+c. Low-temperature answer is correct, and high-temperature answers are consistently incorrect
+- Label: `validation_is_false = 0` (correct) [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- AUROC contribution depends only on the uncertainty score ranking; high-temperature correctness is not inspected in the AUROC path [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L138-L141).
+
+d. Low-temperature answer is incorrect, and high-temperature answers are consistently incorrect
+- Label: `validation_is_false = 1` (incorrect) [semantic_uncertainty/compute_uncertainty_measures.py](semantic_uncertainty/compute_uncertainty_measures.py#L554-L556).
+- AUROC contribution depends only on the uncertainty score ranking; high-temperature correctness is not inspected in the AUROC path [semantic_uncertainty/analyze_results.py](semantic_uncertainty/analyze_results.py#L138-L141).
