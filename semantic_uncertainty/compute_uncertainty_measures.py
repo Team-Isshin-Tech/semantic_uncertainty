@@ -30,6 +30,7 @@ load_dotenv(Path(__file__).resolve().parents[1] / '.env')
 import numpy as np
 import wandb
 import glob
+import multiprocessing as mp
 from multiprocessing import Pool, cpu_count
 from functools import partial
 from tqdm import tqdm
@@ -37,7 +38,8 @@ from tqdm import tqdm
 from analyze_results import analyze_run
 from uncertainty.data.data_utils import load_ds
 from uncertainty.uncertainty_measures.p_ik import get_p_ik
-from uncertainty.uncertainty_measures.semantic_entropy import get_semantic_ids
+from uncertainty.uncertainty_measures.semantic_entropy import get_semantic_ids_embedding
+from uncertainty.uncertainty_measures.semantic_entropy import load_embedding_model
 from uncertainty.uncertainty_measures.semantic_entropy import logsumexp_by_id
 from uncertainty.uncertainty_measures.semantic_entropy import predictive_entropy
 from uncertainty.uncertainty_measures.semantic_entropy import predictive_entropy_rao
@@ -62,7 +64,20 @@ N_NOISE_SAMPLES = 100
 EXP_DETAILS = 'experiment_details.pkl'
 
 
-def save_detailed_noise_results(results):
+def sanitize_filename_component(value):
+    return str(value).strip().replace(' ', '_').replace('/', '_').replace('\\', '_')
+
+
+def get_run_filename(prefix, args, extension):
+    model = sanitize_filename_component(getattr(args, 'model_name', getattr(args, 'model', 'unknown')))
+    dataset = sanitize_filename_component(getattr(args, 'dataset', 'unknown'))
+    run_id = getattr(wandb.run, 'id', None)
+    if run_id:
+        return f"{prefix}_{model}_{dataset}_{run_id}.{extension}"
+    return f"{prefix}_{model}_{dataset}.{extension}"
+
+
+def save_detailed_noise_results(results, args):
     """Save one flat row per question and noise configuration."""
     detailed_rows = []
 
@@ -80,7 +95,7 @@ def save_detailed_noise_results(results):
                 'std_noisy_SE': noise_record['se_std'],
             })
 
-    detailed_path = os.path.join(wandb.run.dir, 'detailed_question_noise_results.csv')
+    detailed_path = os.path.join(wandb.run.dir, get_run_filename('detailed_question_noise_results', args, 'csv'))
     fieldnames = [
         'question_id',
         'noise_mean',
@@ -267,9 +282,14 @@ def process_single_question(args_tuple):
                     for logits_seq, token_ids in zip(logits_data, token_ids_data):
                         noisy_token_log_probs = []
                         for logits_t, token_id in zip(logits_seq, token_ids):
-                            vocab_size = logits_t.shape[1]
+                            # logits_t may be a numpy array here (we convert before forking)
+                            if hasattr(logits_t, 'numpy'):
+                                logits_arr = logits_t.numpy()
+                            else:
+                                logits_arr = np.array(logits_t)
+                            vocab_size = logits_arr.shape[1]
                             noise = np.random.normal(mu, sigma, size=(1, vocab_size))
-                            noisy_logits = logits_t.numpy() + noise
+                            noisy_logits = logits_arr + noise
 
                             logits_max = noisy_logits.max(axis=1, keepdims=True)
                             exp_logits = np.exp(noisy_logits - logits_max)
@@ -386,21 +406,28 @@ def main(args):
 
     wandb.config.update({"is_ood_eval": is_ood_eval}, allow_val_change=True)
 
+    embedding_model = None
+    entailment_model = None
+
     if args.compute_predictive_entropy:
-        logging.info('Beginning loading for entailment model.')
-        if args.entailment_model == 'deberta':
-            entailment_model = EntailmentDeberta()
-        elif args.entailment_model == 'gpt-4':
-            entailment_model = EntailmentGPT4(args.entailment_cache_id, args.entailment_cache_only)
-        elif args.entailment_model == 'gpt-3.5':
-            entailment_model = EntailmentGPT35(args.entailment_cache_id, args.entailment_cache_only)
-        elif args.entailment_model == 'gpt-4-turbo':
-            entailment_model = EntailmentGPT4Turbo(args.entailment_cache_id, args.entailment_cache_only)
-        elif 'llama' in args.entailment_model.lower():
-            entailment_model = EntailmentLlama(args.entailment_cache_id, args.entailment_cache_only, args.entailment_model)
-        else:
-            raise ValueError
-        logging.info('Entailment model loading complete.')
+        embedding_model = load_embedding_model()
+        logging.info('Loaded embedding model for semantic clustering.')
+
+        if args.compute_context_entails_response or args.compute_p_true_in_compute_stage:
+            logging.info('Beginning loading for entailment model.')
+            if args.entailment_model == 'deberta':
+                entailment_model = EntailmentDeberta()
+            elif args.entailment_model == 'gpt-4':
+                entailment_model = EntailmentGPT4(args.entailment_cache_id, args.entailment_cache_only)
+            elif args.entailment_model == 'gpt-3.5':
+                entailment_model = EntailmentGPT35(args.entailment_cache_id, args.entailment_cache_only)
+            elif args.entailment_model == 'gpt-4-turbo':
+                entailment_model = EntailmentGPT4Turbo(args.entailment_cache_id, args.entailment_cache_only)
+            elif 'llama' in args.entailment_model.lower():
+                entailment_model = EntailmentLlama(args.entailment_cache_id, args.entailment_cache_only, args.entailment_model)
+            else:
+                raise ValueError
+            logging.info('Entailment model loading complete.')
 
     if args.compute_p_true_in_compute_stage:
         old_exp = restore(EXP_DETAILS)
@@ -516,9 +543,7 @@ def main(args):
                 context_ent = context_entails_response(context, responses, entailment_model)
                 entropies['context_entails_response'].append(context_ent)
 
-            semantic_ids = get_semantic_ids(
-                responses, model=entailment_model,
-                strict_entailment=args.strict_entailment, example=example)
+            semantic_ids, _, _ = get_semantic_ids_embedding(responses, embedding_model)
             semantic_ids_cache[tid] = semantic_ids
 
             if idx == 0 and has_logits:
@@ -539,10 +564,57 @@ def main(args):
 
     if use_parallel:
         logging.info(f'Processing {len(indices_list)} questions with {num_workers} workers...')
+
+        # Use spawn start method to avoid forking issues with torch/tokenizers
+        try:
+            mp.set_start_method('spawn')
+        except RuntimeError:
+            # start method already set; continue
+            pass
+
+        # Build a lightweight validation structure that converts torch tensors to numpy
+        # so we don't send torch.Storage objects across processes (avoids DupFd errors).
+        light_validation = {}
+        for tid in indices_list:
+            ex = validation_generations[tid]
+            lite = {
+                'question': ex['question'],
+                'context': ex.get('context'),
+                'most_likely_answer': {
+                    'response': ex['most_likely_answer'].get('response'),
+                    'accuracy': ex['most_likely_answer'].get('accuracy', 0.0),
+                    'embedding': ex['most_likely_answer'].get('embedding')
+                },
+                'responses': []
+            }
+
+            full_responses = ex['responses']
+            if not args.use_all_generations:
+                responses_iter = full_responses[:args.use_num_generations]
+            else:
+                responses_iter = full_responses
+
+            for fr in responses_iter:
+                if has_logits:
+                    # New format: (answer, log_liks, embedding, logits, token_ids, acc)
+                    answer, log_liks, emb, logits_seq, token_ids, acc = fr
+                    converted_logits = []
+                    for lt in logits_seq:
+                        if hasattr(lt, 'cpu'):
+                            converted_logits.append(lt.cpu().numpy())
+                        else:
+                            converted_logits.append(np.array(lt))
+                    lite['responses'].append((answer, log_liks, emb, converted_logits, list(token_ids), acc))
+                else:
+                    lite['responses'].append(fr)
+
+            light_validation[tid] = lite
+
         worker_args = [
-            (idx, tid, validation_generations, args_dict, semantic_ids_cache, args.recompute_accuracy, metric_info, has_logits)
+            (idx, tid, light_validation, args_dict, semantic_ids_cache, args.recompute_accuracy, metric_info, has_logits)
             for idx, tid in enumerate(indices_list)
         ]
+
         with Pool(processes=num_workers) as pool:
             results = list(tqdm(pool.imap(process_single_question, worker_args), total=len(worker_args), desc="Processing questions"))
     else:
@@ -595,8 +667,8 @@ def main(args):
             entropies[key].append(value)
 
         if result['noise_records']:
-            noise_file = os.path.join(wandb.run.dir, 'se_after_noise.jsonl')
-            with open(noise_file, 'a') as f:
+            noise_file = os.path.join(wandb.run.dir, get_run_filename('se_after_noise', args, 'jsonl'))
+            with open(noise_file, 'a', encoding='utf-8') as f:
                 for noise_record in result['noise_records']:
                     f.write(json.dumps(noise_record) + '\n')
                     num_noise_records += 1
@@ -608,8 +680,11 @@ def main(args):
         count += 1
 
     if has_logits:
-        logging.info(f'Saved {num_noise_records} noise records to se_after_noise.jsonl')
-        save_detailed_noise_results(results)
+        noise_file = os.path.join(wandb.run.dir, get_run_filename('se_after_noise', args, 'jsonl'))
+        logging.info(f'Saving {num_noise_records} noise records to %s', noise_file)
+        wandb.save(noise_file)
+        logging.info(f'Saved {num_noise_records} noise records to %s', noise_file)
+        save_detailed_noise_results(results, args)
     else:
         logging.info('No noise records saved (old pickle format)')
 
@@ -658,7 +733,7 @@ def main(args):
 
     utils.save(result_dict, 'uncertainty_measures.pkl')
 
-    if args.compute_predictive_entropy:
+    if args.compute_predictive_entropy and entailment_model is not None:
         entailment_model.save_prediction_cache()
 
     if args.analyze_run:
