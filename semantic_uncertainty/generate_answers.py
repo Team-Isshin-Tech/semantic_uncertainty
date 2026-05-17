@@ -7,12 +7,34 @@ import json
 import socket
 import subprocess
 from datetime import datetime
+from pathlib import Path
 from tqdm import tqdm
 
 import numpy as np
 import torch
 import shutil
 import wandb
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(dotenv_path=None):
+        """Lightweight fallback for loading key=value pairs from a .env file."""
+        if dotenv_path is None:
+            dotenv_path = Path(__file__).resolve().parents[1] / '.env'
+        dotenv_file = Path(dotenv_path)
+        if not dotenv_file.exists():
+            return False
+
+        for line in dotenv_file.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#') or '=' not in stripped:
+                continue
+            key, value = stripped.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip())
+        return True
+
+load_dotenv(Path(__file__).resolve().parents[1] / '.env')
 
 from uncertainty.data.data_utils import load_ds
 from uncertainty.utils import utils

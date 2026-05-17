@@ -1,9 +1,32 @@
 """Compute uncertainty measures after generating answers."""
 from collections import defaultdict
+import csv
 import json
 import logging
 import os
 import pickle
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(dotenv_path=None):
+        """Lightweight fallback for loading key=value pairs from a .env file."""
+        if dotenv_path is None:
+            dotenv_path = Path(__file__).resolve().parents[1] / '.env'
+        dotenv_file = Path(dotenv_path)
+        if not dotenv_file.exists():
+            return False
+
+        for line in dotenv_file.read_text(encoding='utf-8').splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#') or '=' not in stripped:
+                continue
+            key, value = stripped.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip())
+        return True
+
+load_dotenv(Path(__file__).resolve().parents[1] / '.env')
 import numpy as np
 import wandb
 import glob
@@ -37,6 +60,46 @@ NOISE_STDS = [0.5, 1.0, 2.0]
 N_NOISE_SAMPLES = 100
 
 EXP_DETAILS = 'experiment_details.pkl'
+
+
+def save_detailed_noise_results(results):
+    """Save one flat row per question and noise configuration."""
+    detailed_rows = []
+
+    for result in results:
+        for noise_record in result['noise_records']:
+            detailed_rows.append({
+                'question_id': noise_record['question_id'],
+                'noise_mean': noise_record['mu'],
+                'noise_std': noise_record['sigma'],
+                'SE_original': noise_record['se_before'],
+                'Noise_added_SE_100_values': json.dumps(noise_record['se_after_samples']),
+                'mean_noisy_SE': noise_record['se_mean'],
+                'delta_SE': noise_record['delta_se'],
+                'abs_delta_SE': abs(noise_record['delta_se']),
+                'std_noisy_SE': noise_record['se_std'],
+            })
+
+    detailed_path = os.path.join(wandb.run.dir, 'detailed_question_noise_results.csv')
+    fieldnames = [
+        'question_id',
+        'noise_mean',
+        'noise_std',
+        'SE_original',
+        'Noise_added_SE_100_values',
+        'mean_noisy_SE',
+        'delta_SE',
+        'abs_delta_SE',
+        'std_noisy_SE',
+    ]
+
+    with open(detailed_path, 'w', newline='', encoding='utf-8') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(detailed_rows)
+
+    wandb.save(detailed_path)
+    logging.info('Saved %d detailed noise rows to %s', len(detailed_rows), detailed_path)
 
 def sanity_check_logit_noise(logits_data, token_ids_data, log_liks):
     """
@@ -546,6 +609,7 @@ def main(args):
 
     if has_logits:
         logging.info(f'Saved {num_noise_records} noise records to se_after_noise.jsonl')
+        save_detailed_noise_results(results)
     else:
         logging.info('No noise records saved (old pickle format)')
 

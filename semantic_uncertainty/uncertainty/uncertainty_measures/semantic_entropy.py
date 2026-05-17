@@ -243,7 +243,7 @@ def predictive_entropy(log_probs):
 
 def predictive_entropy_rao(log_probs):
     entropy = -np.sum(np.exp(log_probs) * log_probs)
-    return entropy
+    return max(float(entropy), 0.0)
 
 
 def cluster_assignment_entropy(semantic_ids):
